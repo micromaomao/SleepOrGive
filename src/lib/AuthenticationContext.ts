@@ -1,6 +1,7 @@
 import { browser } from '$app/environment';
 import { getContext, setContext } from 'svelte';
-import { get, writable, type Writable } from 'svelte/store';
+import { get, writable, type Readable, type Writable } from 'svelte/store';
+import type { UserData } from './shared_types';
 
 const CONTEXT_KEY = Symbol('auth context key');
 const LOCALSTORAGE_BEARER_KEY = 'session_bearer';
@@ -9,7 +10,8 @@ class AuthContext {
 	constructor(
 		public readonly bearer: string | null,
 		public readonly user_id: string | null = null,
-		public readonly username: string | null = null
+		public readonly username: string | null = null,
+		public readonly timezone: string | null = null
 	) {}
 
 	get isAuthenticated(): boolean {
@@ -61,12 +63,12 @@ function createInitContext(store: Writable<AuthContext>) {
 					});
 					return;
 				}
-				let json = await r.json();
+				let json: UserData = await r.json();
 				store.update((old) => {
 					if (old.bearer != initialContext.bearer) {
 						return old;
 					}
-					return new AuthContext(initialContext.bearer, json.user_id, json.username);
+					return new AuthContext(initialContext.bearer, json.user_id, json.username, json.timezone);
 				});
 			},
 			(err) => {
@@ -87,7 +89,7 @@ if (browser) {
 	createInitContext(globalStoreReference);
 }
 
-export function initAuthContext() {
+export function initAuthContext(): Writable<AuthContext> {
 	let store: Writable<AuthContext>;
 	if (browser) {
 		store = globalStoreReference;
@@ -96,6 +98,7 @@ export function initAuthContext() {
 		createInitContext(store);
 	}
 	setContext(CONTEXT_KEY, store);
+	return store;
 }
 
 export function useAuthContext(): Writable<AuthContext> {

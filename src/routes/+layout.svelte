@@ -4,21 +4,29 @@
 	import type { PageData } from './$types';
 	import { page } from '$app/stores';
 	import { initAuthContext, reset as resetAuth, useAuthContext } from '$lib/AuthenticationContext';
+	import { TimezoneContext, newTimezoneContext } from '$lib/TimezoneContext';
 
-	initAuthContext();
+	// Initialize client clock skew
+	import '$lib/time';
+
+	const authContext = initAuthContext();
+	const timezoneContext = newTimezoneContext();
 
 	export let data: PageData;
 	$: title = data.title ? `${data.title} - SleepOrGive` : 'SleepOrGive';
 
 	$: isHome = $page.route.id == '/';
 
-	const authContext = useAuthContext();
 	$: isLoggedIn = $authContext.isAuthenticated;
 	$: username = $authContext.username ?? '...';
 
 	function handleLogout() {
 		// TODO: call logout API
 		resetAuth(authContext);
+	}
+
+	$: if ($authContext.timezone) {
+		$timezoneContext = TimezoneContext.fromZoneName($authContext.timezone);
 	}
 </script>
 

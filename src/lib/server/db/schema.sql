@@ -17,7 +17,8 @@ create table rate_limit_state (
 create table users (
   user_id text not null primary key default gen_ulid(),
   username text default null,
-  notification_email text default null
+  notification_email text default null,
+  timezone text not null
 );
 
 create table sessions (
@@ -29,4 +30,4 @@ create table sessions (
 
 -- TODO: remove
 
-insert into users (user_id, username, notification_email) values ('01HBJZFQNGZZ675MWV7BHN19CD', 'maowtm', 'm@maowtm.org');
+insert into users (user_id, username, notification_email, timezone) values ('01HBJZFQNGZZ675MWV7BHN19CD', 'maowtm', 'm@maowtm.org', 'Europe/London');

@@ -1,7 +1,8 @@
 import { fetchUserData, isUserPublic } from '$lib/server/user';
 import type { UserData } from '$lib/types';
 import { queryFlag } from '$lib/validations';
-import { error, json, type RequestEvent } from '@sveltejs/kit';
+import { error, json } from '@sveltejs/kit';
+import type { RequestEvent } from './$types';
 
 export async function GET({ params, locals, url }: RequestEvent) {
 	let user_id = params.id;

@@ -8,7 +8,7 @@
 	let authContext = useAuthContext();
 
 	function fetchUserData(user_id: string): Promise<UserData> {
-		return $authContext.fetch(`/api/v1/user/${encodeURIComponent(user_id)}`).then(r => r.json());
+		return $authContext.fetch(`/api/v1/user/${encodeURIComponent(user_id)}`).then((r) => r.json());
 	}
 
 	let userDataPromise: Promise<UserData>;

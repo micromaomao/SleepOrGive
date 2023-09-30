@@ -9,7 +9,7 @@ export async function fetchUserData(
 ): Promise<UserData> {
 	return await withDBClient<UserData>(async (db) => {
 		let { rows } = await db.query({
-			text: 'select user_id, username from users where user_id = $1',
+			text: 'select user_id, username, timezone from users where user_id = $1',
 			values: [user_id]
 		});
 		if (rows.length == 0) {

@@ -1,6 +1,7 @@
 import { fetchUserAvatarUrl, isUserPublic } from '$lib/server/user';
 import { toInteger } from '$lib/validations';
-import { error, type RequestEvent } from '@sveltejs/kit';
+import { error } from '@sveltejs/kit';
+import type { RequestEvent } from './$types';
 
 export async function GET({ params, locals, url }: RequestEvent) {
 	let user_id = params.id;

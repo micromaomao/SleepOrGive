@@ -1,4 +1,5 @@
-import { error, json, type RequestEvent } from '@sveltejs/kit';
+import { error, json } from '@sveltejs/kit';
+import type { RequestEvent } from './$types';
 
 export async function GET({ locals }: RequestEvent) {
 	if (!locals.user) {
@@ -9,6 +10,7 @@ export async function GET({ locals }: RequestEvent) {
 
 	return json({
 		user_id: user.user_id,
-		username: user.username
+		username: user.username,
+		timezone: user.timezone
 	});
 }

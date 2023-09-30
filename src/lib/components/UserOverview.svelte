@@ -4,6 +4,7 @@
 	import type { UserData } from '$lib/shared_types';
 	import MaybeLink from './MaybeLink.svelte';
 	import UserProfilePicture from './UserProfilePicture.svelte';
+	import { TimezoneContext, newTimezoneContext } from '$lib/TimezoneContext';
 
 	export let data: UserData;
 
@@ -11,13 +12,19 @@
 	$: isMe = $authContext.isAuthenticated && $authContext.user_id == data.user_id;
 	$: sleepData = data.sleep_data;
 	$: historyData = false;
+
+	const timezoneContext = newTimezoneContext();
+	$: $timezoneContext = TimezoneContext.fromZoneName(data.timezone);
+
+	import { page } from '$app/stores';
+	$: isOnUserPage = $page.url.pathname == `/user/${encodeURIComponent(data.user_id)}`;
 </script>
 
 <h2>
 	<div class="profilepic">
 		<UserProfilePicture user_id={data.user_id} username={data.username} size={30} />
 	</div>
-	<MaybeLink href={isMe ? null : `/user/${encodeURIComponent(data.user_id)}`}>
+	<MaybeLink href={isMe || isOnUserPage ? null : `/user/${encodeURIComponent(data.user_id)}`}>
 		Overview for {data.username}
 	</MaybeLink>
 </h2>

@@ -7,6 +7,7 @@ export interface AuthenticatedUserInfo {
 	user_id: string;
 	username: string | null;
 	notification_email: string | null;
+	timezone: string;
 }
 
 export async function checkAuthentication(

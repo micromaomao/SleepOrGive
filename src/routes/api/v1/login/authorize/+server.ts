@@ -1,4 +1,5 @@
-import { error, json, type RequestEvent } from '@sveltejs/kit';
+import { error, json } from '@sveltejs/kit';
+import type { RequestEvent } from './$types';
 import { withDBClient } from '$lib/server/db';
 import { createSession } from '$lib/server/auth';
 import { mustBeUlid } from '$lib/validations';
