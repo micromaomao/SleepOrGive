@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { toHumanMonth } from '$lib/timeutils';
+	import { toHumanMonth } from '$lib/textutils';
 	import type { UserOverviewData } from '$lib/types';
 
 	export let data: UserOverviewData;
@@ -32,7 +32,7 @@
 		display: flex;
 		flex-direction: row;
 		flex-wrap: wrap;
-    padding: 10px;
+		padding: 10px;
 	}
 
 	.stat {
@@ -41,7 +41,7 @@
 		flex-direction: column;
 		align-items: center;
 		padding: 10px;
-    max-width: 200px;
+		max-width: 200px;
 	}
 
 	.number {

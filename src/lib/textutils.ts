@@ -12,5 +12,9 @@ export function toHumanMonth(monthNumber: number): string {
 		9: 'October',
 		10: 'November',
 		11: 'December'
-	}[monthNumber];
+	}[monthNumber]!;
+}
+
+export function formatNumber(number: number): string {
+	return number.toLocaleString();
 }

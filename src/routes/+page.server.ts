@@ -8,6 +8,8 @@ export const load: PageServerLoad = async ({}) => {
 		currentMonth: 8
 	};
 	return {
-		homeData: myData
+		homeData: myData,
+		nbUsers: 0,
+		totalAmountDonated: 0
 	};
 };

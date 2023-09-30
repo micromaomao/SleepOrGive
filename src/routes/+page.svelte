@@ -1,5 +1,6 @@
 <script lang="ts">
 	import UserOverview from '$lib/components/UserOverview.svelte';
+	import { formatNumber } from '$lib/textutils';
 	import type { PageData } from './$types';
 
 	export let data: PageData;
@@ -13,20 +14,33 @@
 			sending you reminders, and keeping a record of your bedtime. You will be asked to make a
 			charity donation of £1 for every minute you slip up in each month.
 		</p>
-		<div>
+		<p class="impact">
+			So far, <span class="total-users">{formatNumber(data.nbUsers)}</span> users have donated or
+			pledged a total of
+			<span class="impact-amount">£{formatNumber(data.totalAmountDonated)}</span>
+		</p>
+		<div class="signup">
 			<a href="/join" class="button">Sign up now</a>
 		</div>
 	</div>
 	<div class="right">
-		<img src="/banner-drawing.svg" alt="a persoon in a bed, a red floating heart" />
+		<img
+			src="/banner-drawing.svg"
+			alt="a persoon in a bed, a red floating heart"
+			width="400"
+			height="400"
+		/>
 	</div>
 </div>
 
 <div class="content">
-	<p>
-		See how it works:
-	</p>
+	<p>See how it works:</p>
 	<UserOverview data={data.homeData} />
+</div>
+
+<div class="footer">
+	Built by <a href="https://maowtm.org" rel="me" target="_blank">maowtm</a>. See
+	<a href="/privacy">privacy policy</a>.
 </div>
 
 <style>
@@ -53,10 +67,21 @@
 		padding: 10px;
 	}
 
-	@media (max-width: 700px) {
+	.right img {
+		width: 100%;
+		max-width: 400px;
+		align-self: center;
+	}
+
+	@media (max-width: 800px) {
 		.banner {
 			flex-direction: column;
 			padding: 30px;
+		}
+
+		.right img {
+			max-width: 300px;
+			max-height: 300px;
 		}
 	}
 
@@ -65,16 +90,23 @@
 		hyphens: auto;
 	}
 
-	.right img {
-		width: 100%;
-		max-width: 400px;
-		align-self: center;
+	h1,
+	p {
+		margin: 5px 0;
+	}
+	.impact span {
+		font-size: 20px;
+		font-weight: 600;
+		margin-left: 5px;
+		margin-right: 5px;
 	}
 
-	.content {
-		padding: 20px;
-		max-width: 1100px;
-		margin-left: auto;
-		margin-right: auto;
+	.signup {
+		margin-top: 20px;
+	}
+
+	.footer {
+		padding: 10px;
+		text-align: center;
 	}
 </style>

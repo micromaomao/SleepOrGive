@@ -2,9 +2,12 @@
 	import './style.scss';
 
 	import type { PageData } from './$types';
+	import { page } from '$app/stores';
 
 	export let data: PageData;
 	$: title = data.title ? `${data.title} - SleepOrGive` : 'SleepOrGive';
+
+	$: isHome = $page.route.id == '/';
 </script>
 
 <svelte:head>
@@ -15,7 +18,10 @@
 
 <nav>
 	<span class="sitename">
-		<a href="/">SleepOrGive</a>
+		{#if isHome}
+			<a href="https://maowtm.org" target="_blank">mw</a> /
+		{/if}
+		<a href="/" class="sitename-link">SleepOrGive</a>
 	</span>
 	<span class="user">
 		<a href="/login">Login</a>
@@ -40,8 +46,6 @@
 	}
 
 	.sitename {
-		font-size: 18px;
-		font-weight: bold;
 		margin-left: 18px;
 	}
 
@@ -54,6 +58,12 @@
 		flex-direction: row;
 		align-items: center;
 		padding: 0 20px;
+		margin-right: 8px;
+	}
+
+	.sitename .sitename-link {
+		font-size: 18px;
+		font-weight: bold;
 	}
 
 	.sitename a {
