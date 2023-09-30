@@ -1,6 +1,6 @@
 import { browser } from '$app/environment';
 import { getContext, setContext } from 'svelte';
-import { writable, type Writable } from 'svelte/store';
+import { get, writable, type Writable } from 'svelte/store';
 
 const CONTEXT_KEY = Symbol('auth context key');
 const LOCALSTORAGE_BEARER_KEY = 'session_bearer';
@@ -14,6 +14,24 @@ class AuthContext {
 
 	get isAuthenticated(): boolean {
 		return this.bearer != null;
+	}
+
+	fetch(path: string, init?: RequestInit): Promise<any> {
+		return fetch(path, {
+			...init,
+			headers: {
+				Accept: 'application/json',
+				...(init?.headers ?? {}),
+				Authorization: this.isAuthenticated ? `Bearer ${this.bearer}` : undefined
+			}
+		}).then(async (res) => {
+			if (!res.ok) {
+				let json = await res.json();
+				throw new Error(`${res.status} ${json.message}`);
+			} else {
+				return res;
+			}
+		});
 	}
 }
 
@@ -32,30 +50,51 @@ function createInitContext(store: Writable<AuthContext>) {
 	if (browser && initialContext.bearer) {
 		fetch('/api/v1/user/me', {
 			headers: { Authorization: `Bearer ${initialContext.bearer}` }
-		}).then(async (r) => {
-			if (!r.ok) {
+		}).then(
+			async (r) => {
+				if (!r.ok) {
+					store.update((old) => {
+						if (old.bearer != initialContext.bearer) {
+							return old;
+						}
+						return new AuthContext(null);
+					});
+					return;
+				}
+				let json = await r.json();
 				store.update((old) => {
 					if (old.bearer != initialContext.bearer) {
 						return old;
 					}
-					return new AuthContext(null);
+					return new AuthContext(initialContext.bearer, json.user_id, json.username);
 				});
-				return;
+			},
+			(err) => {
+				console.error(err);
+				setTimeout(() => {
+					if (get(store).bearer == initialContext.bearer) {
+						reset(store);
+					}
+				}, 1000);
 			}
-			let json = await r.json();
-			store.update((old) => {
-				if (old.bearer != initialContext.bearer) {
-					return old;
-				}
-				return new AuthContext(initialContext.bearer, json.user_id, json.username);
-			});
-		});
+		);
 	}
 }
 
+let globalStoreReference: Writable<AuthContext> | null = null;
+if (browser) {
+	globalStoreReference = writable(undefined);
+	createInitContext(globalStoreReference);
+}
+
 export function initAuthContext() {
-	let store = writable<AuthContext>(undefined);
-	createInitContext(store);
+	let store: Writable<AuthContext>;
+	if (browser) {
+		store = globalStoreReference;
+	} else {
+		store = writable<AuthContext>(undefined);
+		createInitContext(store);
+	}
 	setContext(CONTEXT_KEY, store);
 }
 
@@ -65,4 +104,14 @@ export function useAuthContext(): Writable<AuthContext> {
 
 export function reset(ctx: Writable<AuthContext>) {
 	createInitContext(ctx);
+}
+
+export function getAuthContext(): AuthContext {
+	if (!browser) {
+		throw new Error('Not available on server side');
+	}
+	if (!globalStoreReference) {
+		throw new Error('AuthContext not initialized');
+	}
+	return get(globalStoreReference);
 }

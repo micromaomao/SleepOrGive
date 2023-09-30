@@ -1,6 +1,7 @@
 <script lang="ts">
 	export let intent: 'success' | 'info' | 'error' = 'error';
 	export let hasRetry: boolean = false;
+	export let style: string = undefined;
 
 	import ErrorCircle from '@fluentui/svg-icons/icons/error_circle_16_regular.svg?component';
 	import Info from '@fluentui/svg-icons/icons/info_16_regular.svg?component';
@@ -14,7 +15,7 @@
 	}
 </script>
 
-<div class={'alert ' + intent}>
+<div class={'alert ' + intent} {style}>
 	{#if intent === 'error'}
 		<ErrorCircle />
 	{/if}

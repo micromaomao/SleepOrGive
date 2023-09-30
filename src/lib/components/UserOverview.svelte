@@ -1,8 +1,9 @@
 <script lang="ts">
 	import { useAuthContext } from '$lib/AuthenticationContext';
 	import { toHumanMonth } from '$lib/textutils';
-	import type { UserData } from '$lib/types';
+	import type { UserData } from '$lib/shared_types';
 	import MaybeLink from './MaybeLink.svelte';
+	import UserProfilePicture from './UserProfilePicture.svelte';
 
 	export let data: UserData;
 
@@ -13,6 +14,9 @@
 </script>
 
 <h2>
+	<div class="profilepic">
+		<UserProfilePicture user_id={data.user_id} username={data.username} size={30} />
+	</div>
 	<MaybeLink href={isMe ? null : `/user/${encodeURIComponent(data.user_id)}`}>
 		Overview for {data.username}
 	</MaybeLink>
@@ -47,6 +51,19 @@
 {/if}
 
 <style>
+	h2 {
+		display: flex;
+		flex-direction: row;
+		align-items: center;
+	}
+
+	.profilepic {
+		margin-right: 10px;
+		display: flex;
+		flex-direction: column;
+		justify-content: center;
+	}
+
 	.stats {
 		display: flex;
 		flex-direction: row;

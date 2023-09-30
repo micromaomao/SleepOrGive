@@ -26,3 +26,14 @@ export function queryFlag(value: string, field_name: string): boolean {
 		throw error(400, `Invalid value for ${field_name} - specify either true or false.`);
 	}
 }
+
+export function toInteger(value: string, field_name: string): number {
+	if (!/^-?[0-9]+$/.test(value)) {
+		throw error(400, `Invalid value for ${field_name} - must be an integer.`);
+	}
+	let n = parseInt(value);
+	if (!Number.isSafeInteger(n)) {
+		throw error(400, `Invalid value for ${field_name}.`);
+	}
+	return n;
+}

@@ -3,23 +3,12 @@
 	import { useAuthContext } from '$lib/AuthenticationContext';
 	import Alert from '$lib/components/Alert.svelte';
 	import UserOverview from '$lib/components/UserOverview.svelte';
-	import type { UserData } from '$lib/types';
+	import type { UserData } from '$lib/shared_types';
 
 	let authContext = useAuthContext();
 
-	function fetchUserData(user_id: string) {
-		return fetch(`/api/v1/user/${encodeURIComponent(user_id)}`, {
-			headers: {
-				Authorization: `Bearer ${$authContext.bearer}`
-			}
-		}).then(async (res) => {
-			let json = await res.json();
-			if (res.ok) {
-				return json;
-			} else {
-				throw new Error(`${res.status} ${json.message}`);
-			}
-		});
+	function fetchUserData(user_id: string): Promise<UserData> {
+		return $authContext.fetch(`/api/v1/user/${encodeURIComponent(user_id)}`).then(r => r.json());
 	}
 
 	let userDataPromise: Promise<UserData>;
@@ -43,9 +32,9 @@
 		</div>
 	{:catch e}
 		<div class="content">
-			<Alert hasRetry on:retry={() => (userDataPromise = fetchUserData($authContext.user_id))}
-				>{e.message}</Alert
-			>
+			<Alert hasRetry on:retry={() => (userDataPromise = fetchUserData($authContext.user_id))}>
+				{e.message}
+			</Alert>
 		</div>
 	{/await}
 {/if}
