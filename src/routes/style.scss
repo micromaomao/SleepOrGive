@@ -73,19 +73,35 @@ body {
 }
 
 a {
-	color: var(--color-primary);
 	text-decoration: none;
 }
 
-a:hover {
-	color: var(--color-primary-dark);
+a:not(.button),
+button.link {
+	color: var(--color-primary);
+	cursor: pointer;
+	background-color: transparent;
+	border: none;
 
-	&:active {
+	&:hover {
+		color: var(--color-primary-dark);
+	}
+
+	&:hover:active {
 		color: var(--color-primary-darker);
 	}
 }
 
-button,
+button.link {
+	padding: 0;
+	margin: 0;
+	font-size: inherit;
+	line-height: inherit;
+	display: inline;
+	transform: translateY(1px);
+}
+
+button:not(.link),
 a.button {
 	display: inline-block;
 	background-color: var(--color-primary);

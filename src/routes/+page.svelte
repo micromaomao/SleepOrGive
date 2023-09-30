@@ -25,7 +25,7 @@
 	</div>
 	<div class="right">
 		<img
-			src="/banner-drawing.svg"
+			src="/images/banner-drawing.svg"
 			alt="a persoon in a bed, a red floating heart"
 			width="400"
 			height="400"

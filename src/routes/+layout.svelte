@@ -3,11 +3,23 @@
 
 	import type { PageData } from './$types';
 	import { page } from '$app/stores';
+	import { initAuthContext, reset as resetAuth, useAuthContext } from '$lib/AuthenticationContext';
+
+	initAuthContext();
 
 	export let data: PageData;
 	$: title = data.title ? `${data.title} - SleepOrGive` : 'SleepOrGive';
 
 	$: isHome = $page.route.id == '/';
+
+	const authContext = useAuthContext();
+	$: isLoggedIn = $authContext.isAuthenticated;
+	$: username = $authContext.username ?? '...';
+
+	function handleLogout() {
+		// TODO: call logout API
+		resetAuth(authContext);
+	}
 </script>
 
 <svelte:head>
@@ -24,9 +36,16 @@
 		<a href="/" class="sitename-link">SleepOrGive</a>
 	</span>
 	<span class="user">
-		<a href="/login">Login</a>
-		<a href="/join">Sign up</a>
-		<a href="https://github.com/micromaomao/SleepOrGive" target="_blank">GitHub</a>
+		{#if isLoggedIn}
+			<a href="/overview">{username}</a>
+			<button class="link" on:click={handleLogout}>Logout</button>
+		{:else}
+			<a href="/login">Login</a>
+			<a href="/join">Sign up</a>
+			<a href="https://github.com/micromaomao/SleepOrGive" target="_blank" class="gh">
+				<img src="/images/github-mark.svg" alt="GitHub" width="16" height="16" />
+			</a>
+		{/if}
 	</span>
 </nav>
 
@@ -76,5 +95,11 @@
 
 	.user > a:last-child {
 		margin-right: 0;
+	}
+
+	.gh {
+		display: flex;
+		flex-direction: row;
+		align-items: center;
 	}
 </style>

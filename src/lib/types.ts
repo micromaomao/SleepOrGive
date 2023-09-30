@@ -1,5 +1,8 @@
-export interface UserOverviewData {
+export interface UserData {
 	username: string;
-	currentMonth: number;
-	currentYear: number;
+	user_id: string;
+	sleep_data: {
+		currentMonth: number;
+		currentYear: number;
+	};
 }

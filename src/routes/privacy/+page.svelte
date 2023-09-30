@@ -63,8 +63,8 @@
 
 	<p>
 		We use your information to provide you with the app and to improve the app. Your data is
-		processed on Google Cloud server located in the United Kingdom. We do not share your information
-		with any third party, except in the following use cases:
+		processed on Google Cloud and AWS server located in the United Kingdom or within the European
+		Union. We do not share your information with any third party, except in the following use cases:
 	</p>
 
 	<ul>
@@ -82,6 +82,11 @@
 			<b>Global user avatars</b>: We will share a hashed version of your email address with
 			<a href="https://gravatar.com/">Gravatar</a>, which allows us to show an avatar for you if you
 			have created an account with them.
+		</li>
+		<li>
+			<b>Cloud computing</b>: We use Google Cloud to host our servers, and
+			<a href="https://neon.tech">Neon</a> for our database. Those services do not have direct access
+			to your data.
 		</li>
 	</ul>
 
