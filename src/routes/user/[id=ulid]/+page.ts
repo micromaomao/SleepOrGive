@@ -11,7 +11,7 @@ export const load: PageLoad = async ({ params, fetch }) => {
 			Authorization: `Bearer ${getAuthContext().bearer}`
 		};
 	}
-	let res = await fetch(`/api/v1/user/${user_id}`, {
+	let res = await fetch(`/api/v1/user/${user_id}?include_older_history=false`, {
 		headers
 	});
 	if (!res.ok) {

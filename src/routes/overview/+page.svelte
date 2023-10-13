@@ -2,13 +2,16 @@
 	import { browser } from '$app/environment';
 	import { useAuthContext } from '$lib/AuthenticationContext';
 	import Alert from '$lib/components/Alert.svelte';
+	import Skeleton from '$lib/components/Skeleton.svelte';
 	import UserOverview from '$lib/components/UserOverview.svelte';
 	import type { UserData } from '$lib/shared_types';
 
 	let authContext = useAuthContext();
 
 	function fetchUserData(user_id: string): Promise<UserData> {
-		return $authContext.fetch(`/api/v1/user/${encodeURIComponent(user_id)}`).then((r) => r.json());
+		return $authContext
+			.fetch(`/api/v1/user/${encodeURIComponent(user_id)}/?include_older_history=true`)
+			.then((r) => r.json());
 	}
 
 	let userDataPromise: Promise<UserData>;
@@ -27,8 +30,9 @@
 	{/if}
 {:else}
 	{#await userDataPromise}
-		<div class="content">Loading your data</div>
-		<!-- TODO: use skeleton -->
+		<div class="content">
+			<Skeleton />
+		</div>
 	{:then data}
 		<div class="content">
 			<h1>Good evening, {data.username}</h1>

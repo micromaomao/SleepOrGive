@@ -105,7 +105,8 @@ export function useAuthContext(): Writable<AuthContext> {
 	return getContext(CONTEXT_KEY);
 }
 
-export function reset(ctx: Writable<AuthContext>) {
+export function reset(ctx: Writable<AuthContext>, logout: boolean = true) {
+	window.localStorage.removeItem(LOCALSTORAGE_BEARER_KEY);
 	createInitContext(ctx);
 }
 

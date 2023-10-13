@@ -20,9 +20,13 @@
 	$: isLoggedIn = $authContext.isAuthenticated;
 	$: username = $authContext.username ?? '...';
 
-	function handleLogout() {
-		// TODO: call logout API
-		resetAuth(authContext);
+	async function handleLogout() {
+		try {
+			await $authContext.fetch('/api/v1/logout', { method: 'POST' });
+			resetAuth(authContext);
+		} catch (e) {
+			// TODO
+		}
 	}
 
 	$: if ($authContext.timezone) {

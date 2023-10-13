@@ -2,16 +2,10 @@ import { DateTime } from 'luxon';
 import type { TimezoneContext } from './TimezoneContext';
 import { browser } from '$app/environment';
 
-const SERVER_DEBUG_SKEW = 0;
-
-let client_clock_skew = 0;
+let clock_skew = 0;
 
 export function nowMillis(): number {
-	if (browser) {
-		return Date.now() + client_clock_skew;
-	} else {
-		return Date.now() + SERVER_DEBUG_SKEW;
-	}
+	return Date.now() + clock_skew;
 }
 
 export function luxonNow(timezone: TimezoneContext): DateTime {
@@ -37,8 +31,8 @@ if (browser) {
 					setTimeout(adjustClockSkew, 5000);
 				} else {
 					let fetch_time = fetch_start + fetch_delay / 2;
-					client_clock_skew = json.millis - fetch_time;
-					console.log(`Client clock skew: ${client_clock_skew}ms`);
+					clock_skew = json.millis - fetch_time;
+					console.log(`Client clock skew: ${clock_skew}ms`);
 					setTimeout(adjustClockSkew, 60000);
 				}
 			}

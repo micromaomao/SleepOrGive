@@ -1,4 +1,7 @@
 <script lang="ts">
+	import { invalidateAll } from '$app/navigation';
+	import Alert from '$lib/components/Alert.svelte';
+	import Skeleton from '$lib/components/Skeleton.svelte';
 	import UserOverview from '$lib/components/UserOverview.svelte';
 	import { formatNumber } from '$lib/textutils';
 	import type { PageData } from './$types';
@@ -35,7 +38,13 @@
 
 <div class="content">
 	<p>See how it works:</p>
-	<UserOverview data={data.homeData} />
+	{#await data.streamed.homeData}
+		<Skeleton />
+	{:then homeData}
+		<UserOverview data={homeData} />
+	{:catch e}
+		<Alert hasRetry={true} on:retry={() => invalidateAll()}>Error loading data: {e.message}</Alert>
+	{/await}
 </div>
 
 <div class="footer">
