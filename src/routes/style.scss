@@ -82,6 +82,9 @@ button.link {
 	cursor: pointer;
 	background-color: transparent;
 	border: none;
+	font-weight: normal;
+	line-height: inherit;
+	font-size: inherit;
 
 	&:hover {
 		color: var(--color-primary-dark);
@@ -95,24 +98,22 @@ button.link {
 button.link {
 	padding: 0;
 	margin: 0;
-	font-size: inherit;
-	line-height: inherit;
 	display: inline;
 	transform: translateY(1px);
 }
 
 button:not(.link),
 a.button {
-	display: inline-block;
 	background-color: var(--color-primary);
 	color: white;
 	border: none;
-	outline: none;
 	margin: 0;
 	padding: 10px 15px;
 	font-weight: 600;
 	cursor: pointer;
 	border-radius: 3px;
+	border: transparent solid 1px;
+	font-size: inherit;
 
 	&:hover {
 		background-color: var(--color-primary-dark);
@@ -122,6 +123,36 @@ a.button {
 	&:hover:active {
 		background-color: var(--color-primary-darker);
 		color: white;
+	}
+
+	&.secondary {
+		background-color: transparent;
+		border: var(--color-primary) solid 1px;
+		color: var(--color-primary);
+		font-weight: normal;
+
+		&:hover {
+			background-color: var(--color-light-gray);
+			color: var(--color-primary);
+		}
+
+		&:hover:active {
+			background-color: var(--color-light-gray);
+			color: var(--color-primary-dark);
+		}
+	}
+
+	&.danger {
+		background-color: #c43434;
+		color: #ffffff;
+
+		&:hover {
+			background-color: #a42e2e;
+		}
+
+		&:hover:active {
+			background-color: #5a1919;
+		}
 	}
 }
 

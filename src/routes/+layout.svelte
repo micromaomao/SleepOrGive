@@ -42,11 +42,19 @@
 			<a href="https://maowtm.org" target="_blank">mw</a> /
 		{/if}
 		<a href="/" class="sitename-link">SleepOrGive</a>
+		{#if isHome}
+			&mdash; Start sleeping earlier today!
+		{/if}
 	</span>
 	<span class="user">
 		{#if isLoggedIn}
 			<a href="/overview">{username}</a>
-			<button class="link" on:click={handleLogout}>Logout</button>
+			<a
+				on:click={handleLogout}
+				on:keydown={(e) => e.key == 'Enter' && handleLogout()}
+				role="link"
+				tabindex="0">Logout</a
+			>
 		{:else}
 			<a href="/login">Login</a>
 			<a href="/join">Sign up</a>
