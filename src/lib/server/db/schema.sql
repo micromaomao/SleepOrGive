@@ -16,13 +16,16 @@ create table rate_limit_state (
 
 create table users (
   user_id text not null primary key default gen_ulid(),
-  username text default null unique nulls distinct,
+  username text default null,
+  is_admin boolean not null default false,
   primary_email text default null unique nulls distinct,
   timezone text not null, -- IEEE tz identifier, e.g. "Europe/London"
   target time default null,
   is_public boolean default null, -- null means not asked
   last_monthly_process_time timestamptz default null
 );
+
+create unique index username_ignorecase on users (lower(username)) where username is not null;
 
 create table email_verification (
   id text not null primary key default gen_ulid(),
