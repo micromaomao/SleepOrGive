@@ -16,15 +16,17 @@
 </script>
 
 <div class={'alert ' + intent} {style}>
-	{#if intent === 'error'}
-		<ErrorCircle />
-	{/if}
-	{#if intent == 'info'}
-		<Info />
-	{/if}
-	{#if intent == 'success'}
-		<CheckmarkCircle />
-	{/if}
+	<div class="icon">
+		{#if intent === 'error'}
+			<ErrorCircle />
+		{/if}
+		{#if intent == 'info'}
+			<Info />
+		{/if}
+		{#if intent == 'success'}
+			<CheckmarkCircle />
+		{/if}
+	</div>
 
 	<div class="text">
 		<slot />
@@ -61,6 +63,14 @@
 
 	.alert :global(svg) {
 		fill: currentColor;
+	}
+
+	.icon {
+		flex-shrink: 0;
+		flex-grow: 0;
+		display: flex;
+		flex-direction: column;
+		justify-content: center;
 	}
 
 	.text {

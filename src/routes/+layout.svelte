@@ -1,7 +1,6 @@
 <script lang="ts">
 	import './style.scss';
 
-	import type { PageData } from './$types';
 	import { page } from '$app/stores';
 	import { initAuthContext, reset as resetAuth, useAuthContext } from '$lib/AuthenticationContext';
 	import { TimezoneContext, newTimezoneContext } from '$lib/TimezoneContext';
@@ -12,10 +11,10 @@
 	const authContext = initAuthContext();
 	const timezoneContext = newTimezoneContext();
 
-	export let data: PageData;
-	$: title = data.title ? `${data.title} - SleepOrGive` : 'SleepOrGive';
+	$: title = $page.data.title ? `${$page.data.title} - SleepOrGive` : 'SleepOrGive';
 
 	$: isHome = $page.route.id == '/';
+	$: isAdminPage = $page.data.is_admin_page ?? false;
 
 	$: isLoggedIn = $authContext.isAuthenticated;
 	$: username = $authContext.username ?? '...';
@@ -48,6 +47,8 @@
 		<a href="/" class="sitename-link">SleepOrGive</a>
 		{#if isHome}
 			&mdash; Start sleeping earlier today!
+		{:else if isAdminPage}
+			Admin center
 		{/if}
 	</span>
 	<span class="user">
@@ -61,7 +62,9 @@
 			>
 		{:else}
 			<a href="/login">Login</a>
-			<a href="/join">Sign up</a>
+			{#if $page.route.id != '/join'}
+				<a href="/join">Sign up</a>
+			{/if}
 			<a href="https://github.com/micromaomao/SleepOrGive" target="_blank" class="gh">
 				<img src="/images/github-mark.svg" alt="GitHub" width="16" height="16" />
 			</a>
@@ -118,8 +121,18 @@
 	}
 
 	.gh {
-		display: flex;
-		flex-direction: row;
-		align-items: center;
+		align-self: center;
+		margin-top: 6px;
+	}
+
+	@media (max-width: 600px) {
+		nav {
+			flex-direction: column;
+			height: auto;
+		}
+
+		nav > * {
+			line-height: 1.7;
+		}
 	}
 </style>

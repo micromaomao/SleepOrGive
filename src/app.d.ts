@@ -9,7 +9,10 @@ declare global {
 		interface Locals {
 			user: AuthenticatedUserInfo;
 		}
-		// interface PageData {}
+		interface PageData {
+			title: string;
+			is_admin_page?: boolean;
+		}
 		// interface Platform {}
 	}
 }

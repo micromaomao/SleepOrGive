@@ -2,12 +2,18 @@ import { error, type RequestEvent } from '@sveltejs/kit';
 import { withDBClient } from './db';
 import { generateToken, strToHashBuf } from './secure_token';
 import { authenticationBearer } from '$lib/validations';
+import { TimezoneContext } from '$lib/TimezoneContext';
 
 export interface AuthenticatedUserInfo {
 	user_id: string;
 	username: string | null;
-	notification_email: string | null;
-	timezone: string;
+	is_admin: boolean;
+	primary_email: string | null;
+	target: string | null;
+	last_monthly_process_time: Date | null;
+
+	is_public: boolean;
+	timezone: TimezoneContext;
 }
 
 export async function checkAuthentication(
@@ -48,7 +54,9 @@ export async function checkAuthentication(
 	}
 	let user = rows[0];
 	return {
-		...user
+		...user,
+		is_public: !!user.is_public,
+		timezone: TimezoneContext.fromZoneName(user.timezone) ?? TimezoneContext.fromZoneName('UTC')
 	};
 }
 

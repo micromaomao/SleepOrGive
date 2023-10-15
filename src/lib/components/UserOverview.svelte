@@ -13,8 +13,7 @@
 	$: sleepData = data.sleep_data;
 	$: historyData = false;
 
-	const timezoneContext = newTimezoneContext();
-	$: $timezoneContext = TimezoneContext.fromZoneName(data.timezone);
+	const timezoneContext = newTimezoneContext(TimezoneContext.fromZoneName(data.timezone));
 
 	import { page } from '$app/stores';
 	$: isOnUserPage = $page.url.pathname == `/user/${encodeURIComponent(data.user_id)}`;

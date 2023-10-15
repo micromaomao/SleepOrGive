@@ -21,6 +21,8 @@ create table users (
   primary_email text default null unique nulls distinct,
   timezone text not null, -- IEEE tz identifier, e.g. "Europe/London"
   target time default null,
+  currency text default null,
+  donation_per_minute decimal default null,
   is_public boolean default null, -- null means not asked
   last_monthly_process_time timestamptz default null
 );
@@ -29,6 +31,7 @@ create unique index username_ignorecase on users (lower(username)) where usernam
 
 create table email_verification (
   id text not null primary key default gen_ulid(),
+  email text not null,
   hashed_ticket bytea not null unique,
   code text default null,
   purpose text not null -- e.g. "signup", "login"
@@ -44,6 +47,7 @@ create table auth_attempts (
 );
 
 create table sessions (
+  -- This is deleted when the user logs out (but not the auth_attempt)
   hashed_bearer bytea not null primary key,
   hashed_cookie bytea default null unique nulls distinct,
   created_at timestamptz not null default now(),
@@ -87,16 +91,16 @@ create table sleep_records (
 
 create table notification_subscriptions (
   id text not null primary key default gen_ulid(),
-  user_id text not null references users(user_id),
+  associated_session bytea not null references sessions(hashed_bearer) on delete cascade
   platform_data jsonb not null,
   success_count bigint not null default 0,
-  failure_count bigint not null default 0
+  failure_count bigint not null default 0,
 );
 
 create table sleep_notifications (
   id text not null primary key default gen_ulid(),
   scheduled_time timestamptz not null,
-  subscription_id text not null references notification_subscriptions(id),
+  subscription_id text not null references notification_subscriptions(id) on delete cascade,
   status int not null default 0, -- 0 = pending, 1 = delivered, 2 = delivery failed
   retry_count int not null default 0
 );
@@ -119,14 +123,3 @@ create table outgoing_mails (
 
 create index email_suppressed_address_due_to_bounce on outgoing_mails (address, bounced_at) where bounced_at is not null;
 create index email_suppressed_address_due_to_spam_report on outgoing_mails (address, spam_reported_at) where spam_reported_at is not null;
-
--- Temporary table to track signup progress and store data like username / email
--- before it is confirmed. Will be deleted after user is completely signed up.
-create table signup_flow (
-  user_id text not null references users(user_id) primary key,
-  email_verification_id text default null references email_verification(id),
-
-  -- Stored settings to be set after successful signup, or not change if null
-  username text default null,
-  email text default null
-)

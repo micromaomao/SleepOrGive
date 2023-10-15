@@ -1,9 +1,10 @@
 import { error } from '@sveltejs/kit';
 
-const ULID_RE = /^[a-zA-Z0-9]{26}$/;
-const USERNAME_RE_CHARSET = /^[a-zA-Z0-9_-~!^*()]+$/;
-const MIN_USERNAME_LENGTH = 2;
-const MAX_USERNAME_LENGTH = 32;
+export const ULID_RE = /^[a-zA-Z0-9]{26}$/;
+export const USERNAME_RE_CHARSET = /^[a-zA-Z0-9_\-.~!^*()]*$/;
+export const MIN_USERNAME_LENGTH = 2;
+export const MAX_USERNAME_LENGTH = 32;
+export const EMAIL = /^[^@]+@[^@]+$/;
 
 export function mustBeUlid(str: string, field_name: string) {
 	if (!ULID_RE.test(str)) {
@@ -60,3 +61,21 @@ export function mustBeValidUsername(username: string) {
 		throw error(400, `Username cannot be longer than ${MAX_USERNAME_LENGTH} characters.`);
 	}
 }
+
+export function mustBeValidEmail(email: string) {
+	if (!EMAIL.test(email)) {
+		throw error(400, 'Invalid email address.');
+	}
+}
+
+export function validateDonationAmount(amount: string) {
+	if (!/^[0-9]*(\.[0-9]{1,2})?$/.test(amount) || amount.length == 0) {
+		throw error(400, 'Invalid donation amount.');
+	}
+	let parsed = parseFloat(amount);
+	if (Number.isNaN(parsed) || !Number.isFinite(parsed)) {
+		throw error(400, 'Invalid donation amount.');
+	}
+}
+
+export const ALLOWED_CURRENCIES = ['GBP', 'USD', 'CNY', 'JPY'];

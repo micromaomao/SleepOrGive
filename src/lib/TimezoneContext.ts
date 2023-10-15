@@ -9,12 +9,20 @@ export class TimezoneContext {
 	constructor(public readonly zone: Zone) {}
 
 	static fromZoneName(zoneName: string): TimezoneContext {
-		return new TimezoneContext(IANAZone.create(zoneName));
+		let z = IANAZone.create(zoneName);
+		if (!z.valid) {
+			return null;
+		}
+		return new TimezoneContext(z);
+	}
+
+	static systemZone(): TimezoneContext {
+		return new TimezoneContext(new SystemZone());
 	}
 }
 
 function createInitContext(store: Writable<TimezoneContext>) {
-	let initialContext = new TimezoneContext(new SystemZone());
+	let initialContext = TimezoneContext.systemZone();
 	store.set(initialContext);
 }
 
@@ -35,9 +43,9 @@ export function newTimezoneContext(override?: TimezoneContext): Readable<Timezon
 			store = globalStoreReference;
 		} else {
 			store = writable<TimezoneContext>(undefined);
-			createInitContext(store);
-			setContext(CONTEXT_KEY, store);
 		}
+		createInitContext(store);
+		setContext(CONTEXT_KEY, store);
 		return store;
 	}
 }
