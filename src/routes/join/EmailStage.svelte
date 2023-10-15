@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { EMAIL } from '$lib/validations';
 	import { createEventDispatcher, onMount } from 'svelte';
+	import NextPrev from './NextPrev.svelte';
 	const dispatch = createEventDispatcher();
 
 	let email_input: HTMLInputElement;
@@ -53,9 +54,7 @@
 		bind:value={email}
 	/>
 
-	<div class="nextprev">
-		<input type="submit" class="next primary" disabled={!EMAIL.test(email)} value="Next" />
-	</div>
+	<NextPrev disabled={!EMAIL.test(email)} hasPrev={false} on:next />
 </form>
 
 <style lang="scss">

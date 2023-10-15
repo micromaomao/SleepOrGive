@@ -4,6 +4,7 @@
 	import { tryValidate } from '$lib/utils';
 	import { validateDonationAmount } from '$lib/validations';
 	import { createEventDispatcher } from 'svelte';
+	import NextPrev from './NextPrev.svelte';
 	const dispatch = createEventDispatcher();
 
 	const timezoneContext = useTimezoneContext();
@@ -49,10 +50,7 @@
 		per minute I slip.
 	</label>
 
-	<div class="nextprev">
-		<button class="link back" on:click={(evt) => dispatch('back')}>Back</button>
-		<input type="submit" class="next primary" value="Next" disabled={!!donationAmountValidation} />
-	</div>
+	<NextPrev disabled={!!donationAmountValidation} on:back on:next />
 
 	{#if donationAmountValidation}
 		<p class="error">

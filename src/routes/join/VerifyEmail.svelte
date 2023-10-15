@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { createEventDispatcher } from 'svelte';
+	import NextPrev from './NextPrev.svelte';
 
 	const dispatch = createEventDispatcher();
 </script>
@@ -18,10 +19,7 @@
 	link and enter the code shown.
 </p>
 
-<div class="nextprev">
-	<button class="link back" on:click={(evt) => dispatch('back')}>Back</button>
-	<button class="next primary" on:click={(evt) => dispatch('next')} disabled={true}> Next </button>
-</div>
+<NextPrev disabled={true} on:back on:next />
 
 <style lang="scss">
 	@import './shared.scss';

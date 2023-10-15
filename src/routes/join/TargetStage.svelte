@@ -4,6 +4,7 @@
 	import TargetTimeSlider from '$lib/components/TargetTimeSlider.svelte';
 	import { parseTime } from '$lib/textutils';
 	import { createEventDispatcher } from 'svelte';
+	import NextPrev from './NextPrev.svelte';
 	const dispatch = createEventDispatcher();
 
 	export let sleepTargetTime: string = '23:00';
@@ -54,10 +55,7 @@
 		Your current timezone is {timezoneStr}.
 	</p>
 
-	<div class="nextprev">
-		<button class="link back" on:click={(evt) => dispatch('back')}>Back</button>
-		<input type="submit" class="next primary" value="Next" disabled={!!sleepTimeValidation} />
-	</div>
+	<NextPrev disabled={!!sleepTimeValidation} on:back on:next />
 
 	{#if sleepTimeValidation}
 		<p class="error">

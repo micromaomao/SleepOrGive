@@ -3,6 +3,7 @@
 	import { mustBeValidUsername } from '$lib/validations';
 	import { createEventDispatcher } from 'svelte';
 	import { fly } from 'svelte/transition';
+	import NextPrev from './NextPrev.svelte';
 	const dispatch = createEventDispatcher();
 
 	export let username: string = '';
@@ -51,10 +52,7 @@
 		</div>
 	{/if}
 
-	<div class="nextprev">
-		<button class="link back" on:click={(evt) => dispatch('back')}>Back</button>
-		<input type="submit" class="next primary" disabled={!!usernameValidationError} value="Next" />
-	</div>
+	<NextPrev disabled={!!usernameValidationError} on:back on:next />
 
 	<div class="error">
 		{#if usernameValidationError && usernameValidationError != 'USERNAME_REQUIRED'}
