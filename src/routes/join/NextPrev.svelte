@@ -5,13 +5,15 @@
 	const dispatch = createEventDispatcher();
 
 	export let hasPrev: boolean = true;
+	export let overrideNext: string | null = null;
 </script>
 
 <div class="nextprev">
 	{#if hasPrev}
+		<!-- Using a here because using button causes form submit to click the "back" button -->
 		<a
 			tabindex="0"
-			role="link"
+			role="button"
 			class="back"
 			on:click={(evt) => dispatch('back')}
 			on:keydown={(evt) => {
@@ -24,7 +26,7 @@
 	<input
 		type="submit"
 		class="next primary"
-		value="Next"
+		value={overrideNext !== null ? overrideNext : 'Next'}
 		{disabled}
 		on:click={(evt) => {
 			evt.preventDefault();

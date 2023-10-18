@@ -116,6 +116,7 @@ input[type='button'] {
 	border-radius: 3px;
 	border: transparent solid 1px;
 	font-size: inherit;
+	font-family: inherit;
 
 	&:hover {
 		background-color: var(--color-primary-dark);
@@ -208,6 +209,7 @@ select,
 	border-bottom: 2px solid var(--color-light-gray);
 	border-radius: 4px;
 	font-size: inherit;
+	font-family: inherit;
 	outline: none;
 
 	&:focus {
@@ -234,4 +236,69 @@ img.emoji {
 	width: 1em;
 	margin: 0 0.05em 0 0.1em;
 	vertical-align: -0.2em;
+}
+
+input[type='checkbox'] {
+	appearance: none;
+	font-size: inherit;
+	position: relative;
+	padding: 0;
+	margin-right: 4px;
+	width: 1.9em;
+	height: 1em;
+	background-color: var(--color-background);
+	border: 1px solid var(--color-gray);
+	border-radius: 1em;
+	display: inline flex;
+	flex-direction: row;
+	align-items: center;
+	transition: background-color 200ms ease-in-out, border 200ms ease-in-out;
+	cursor: pointer;
+
+	&::before {
+		content: '';
+		display: inline-block;
+		width: 0.7em;
+		height: 0.7em;
+		border-radius: 0.5em;
+		background-color: var(--color-gray);
+		margin-left: 0.125em;
+		transition: background-color 200ms ease-out, margin-left 200ms ease-in-out;
+	}
+
+	&:checked {
+		background-color: var(--color-primary);
+		border: 1px solid var(--color-primary);
+
+		&::before {
+			background-color: var(--color-background);
+			margin-left: 1em;
+		}
+	}
+
+	&:hover {
+		background-color: var(--color-light-gray);
+
+		&:checked {
+			background-color: var(--color-primary-dark);
+			border: 1px solid var(--color-primary-dark);
+		}
+	}
+
+	&:disabled,
+	&:disabled:hover,
+	&:checked:disabled {
+		background-color: var(--color-background);
+		border: 1px solid var(--color-light-gray);
+		cursor: not-allowed;
+
+		&::before {
+			background-color: var(--color-gray);
+		}
+	}
+}
+
+summary {
+	cursor: pointer;
+	font-weight: bold;
 }

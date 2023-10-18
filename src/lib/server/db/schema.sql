@@ -24,10 +24,12 @@ create table users (
   currency text default null,
   donation_per_minute decimal default null,
   is_public boolean default null, -- null means not asked
-  last_monthly_process_time timestamptz default null
+  last_monthly_process_time timestamptz default null,
+  sleep_notification_advance_times interval[] not null
 );
 
 create unique index username_ignorecase on users (lower(username)) where username is not null;
+create unique index email_ignorecase on users (lower(primary_email)) where primary_email is not null;
 
 create table email_verification (
   id text not null primary key default gen_ulid(),
@@ -62,7 +64,8 @@ create table user_auth_methods (
   oauth_provider text default null,
   oauth_refresh_token bytea default null, -- encrypted
   oauth_remote_user_id text default null,
-  two_factor_webauthn_data jsonb default null
+  two_factor_webauthn_data jsonb default null,
+  backup_codes text[] default null
 );
 
 create index on user_auth_methods (user_id);
@@ -89,18 +92,18 @@ create table sleep_records (
   primary key (user_id, "date")
 );
 
-create table notification_subscriptions (
+create table push_notification_subscriptions (
   id text not null primary key default gen_ulid(),
-  associated_session bytea not null references sessions(hashed_bearer) on delete cascade
+  associated_session bytea not null references sessions(hashed_bearer) on delete cascade,
   platform_data jsonb not null,
   success_count bigint not null default 0,
-  failure_count bigint not null default 0,
+  failure_count bigint not null default 0
 );
 
 create table sleep_notifications (
   id text not null primary key default gen_ulid(),
   scheduled_time timestamptz not null,
-  subscription_id text not null references notification_subscriptions(id) on delete cascade,
+  subscription_id text not null references push_notification_subscriptions(id) on delete cascade,
   status int not null default 0, -- 0 = pending, 1 = delivered, 2 = delivery failed
   retry_count int not null default 0
 );

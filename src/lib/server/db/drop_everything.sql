@@ -3,7 +3,7 @@ drop table if exists db_migration_state cascade;
 drop table if exists users cascade;
 drop table if exists auth_attempts cascade;
 drop table if exists email_verification cascade;
-drop table if exists notification_subscriptions cascade;
+drop table if exists push_notification_subscriptions cascade;
 drop table if exists outgoing_mails cascade;
 drop table if exists rate_limit_state cascade;
 drop table if exists sessions cascade;

@@ -1,12 +1,12 @@
 import { browser } from '$app/environment';
 import { getContext, setContext } from 'svelte';
-import { get, writable, type Readable, type Writable } from 'svelte/store';
+import { get, writable, type Readable, type Writable, type Unsubscriber } from 'svelte/store';
 import type { UserData } from './shared_types';
 
 const CONTEXT_KEY = Symbol('auth context key');
 const LOCALSTORAGE_BEARER_KEY = 'session_bearer';
 
-class AuthContext {
+export class AuthContext {
 	constructor(
 		public readonly bearer: string | null,
 		public readonly user_id: string | null = null,
@@ -75,7 +75,7 @@ function createInitContext(store: Writable<AuthContext>) {
 				console.error(err);
 				setTimeout(() => {
 					if (get(store).bearer == initialContext.bearer) {
-						reset(store);
+						reset(store, false);
 					}
 				}, 1000);
 			}
@@ -105,8 +105,10 @@ export function useAuthContext(): Writable<AuthContext> {
 	return getContext(CONTEXT_KEY);
 }
 
-export function reset(ctx: Writable<AuthContext>, logout: boolean = true) {
-	window.localStorage.removeItem(LOCALSTORAGE_BEARER_KEY);
+export function reset(ctx: Writable<AuthContext>, clearStorage: boolean = true) {
+	if (clearStorage) {
+		window.localStorage.removeItem(LOCALSTORAGE_BEARER_KEY);
+	}
 	createInitContext(ctx);
 }
 
@@ -118,4 +120,11 @@ export function getAuthContext(): AuthContext {
 		throw new Error('AuthContext not initialized');
 	}
 	return get(globalStoreReference);
+}
+
+export function subscribeAuthContext(fn: (authContext: AuthContext) => void): Unsubscriber {
+	if (!browser) {
+		throw new Error('Not available on server side');
+	}
+	return globalStoreReference.subscribe(fn);
 }

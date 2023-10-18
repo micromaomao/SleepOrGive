@@ -4,6 +4,7 @@
 	import { page } from '$app/stores';
 	import { initAuthContext, reset as resetAuth, useAuthContext } from '$lib/AuthenticationContext';
 	import { TimezoneContext, newTimezoneContext } from '$lib/TimezoneContext';
+	import '$lib/SWContext';
 
 	// Initialize client clock skew
 	import '$lib/time';

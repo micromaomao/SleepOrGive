@@ -12,7 +12,7 @@
 
 <script lang="ts">
 	import EmailStage from './EmailStage.svelte';
-	import UsernameStage from './UsernameStage.svelte';
+	import UserProfileStage from './UserProfileStage.svelte';
 	import TargetStage from './TargetStage.svelte';
 
 	import { goto } from '$app/navigation';
@@ -23,8 +23,9 @@
 	import VerifyEmail from './VerifyEmail.svelte';
 	import { onMount } from 'svelte';
 	import { browser } from '$app/environment';
+	import Notification from './Notification.svelte';
 
-	const STAGES = ['email', 'target', 'donation', 'username', 'verifyemail'];
+	const STAGES = ['email', 'target', 'donation', 'username', 'notification', 'verifyemail'];
 
 	let signupSessionData: SignupSessionData = {
 		currentStep: STAGES[0]
@@ -117,12 +118,15 @@
 			/>
 		{/if}
 		{#if stage == 'username'}
-			<UsernameStage
+			<UserProfileStage
 				bind:username={signupSessionData.username}
 				bind:profile_public={signupSessionData.profile_public}
 				on:next={nextStage}
 				on:back={previousStage}
 			/>
+		{/if}
+		{#if stage == 'notification'}
+			<Notification on:next={nextStage} on:back={previousStage} />
 		{/if}
 		{#if stage == 'verifyemail'}
 			<VerifyEmail on:next={nextStage} on:back={previousStage} />
