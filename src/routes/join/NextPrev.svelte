@@ -1,11 +1,38 @@
+<script lang="ts" context="module">
+	import { getContext, setContext } from 'svelte';
+	import { writable, type Readable, type Writable } from 'svelte/store';
+	export const ContextKey = Symbol("NextPrev:ContextKey");
+	export interface Context {
+		hasPrev?: boolean;
+		overrideNext?: string;
+		overrideBack?: string;
+		onBack: () => void;
+		onNext: () => void;
+	}
+
+	export function initNextPrevContext(context: Context) {
+		let store = writable(context);
+		setContext(ContextKey, store);
+		return store;
+	}
+	export function useNextPrevContext(): Readable<Context> {
+		const context = getContext<Writable<Context>>(ContextKey);
+		if (context === undefined) {
+			throw new Error("NextPrev: No context found");
+		}
+		return context;
+	}
+</script>
 <script lang="ts">
-	import { createEventDispatcher } from 'svelte';
+	export let nextDisabled: boolean = false;
+	export let overrideNext: string | undefined = undefined;
 
-	export let disabled: boolean = false;
-	const dispatch = createEventDispatcher();
-
-	export let hasPrev: boolean = true;
-	export let overrideNext: string | null = null;
+	const context = useNextPrevContext();
+	$: hasPrev = $context.hasPrev ?? true;
+	$: nextStr = overrideNext ?? $context.overrideNext ?? 'Next';
+	$: backStr = $context.overrideBack ?? 'Back';
+	$: onBack = $context.onBack;
+	$: onNext = $context.onNext;
 </script>
 
 <div class="nextprev">
@@ -15,22 +42,22 @@
 			tabindex="0"
 			role="button"
 			class="back"
-			on:click={(evt) => dispatch('back')}
+			on:click={(evt) => onBack()}
 			on:keydown={(evt) => {
 				if (evt.key == 'Enter') {
-					dispatch('back');
+					onBack();
 				}
-			}}>Back</a
+			}}>{backStr}</a
 		>
 	{/if}
 	<input
 		type="submit"
 		class="next primary"
-		value={overrideNext !== null ? overrideNext : 'Next'}
-		{disabled}
+		value={nextStr}
+		disabled={nextDisabled}
 		on:click={(evt) => {
 			evt.preventDefault();
-			dispatch('next');
+			onNext();
 		}}
 	/>
 </div>

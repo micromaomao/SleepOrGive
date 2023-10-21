@@ -19,7 +19,7 @@
 	link and enter the code shown.
 </p>
 
-<NextPrev disabled={true} on:back on:next />
+<NextPrev nextDisabled={true} />
 
 <style lang="scss">
 	@import './shared.scss';

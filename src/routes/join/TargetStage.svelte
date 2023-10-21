@@ -55,7 +55,7 @@
 		Your current timezone is {timezoneStr}.
 	</p>
 
-	<NextPrev disabled={!!sleepTimeValidation} on:back on:next />
+	<NextPrev nextDisabled={!!sleepTimeValidation} />
 
 	{#if sleepTimeValidation}
 		<p class="error">

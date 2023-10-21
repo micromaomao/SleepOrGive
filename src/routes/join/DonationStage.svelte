@@ -50,7 +50,7 @@
 		per minute I slip.
 	</label>
 
-	<NextPrev disabled={!!donationAmountValidation} on:back on:next />
+	<NextPrev nextDisabled={!!donationAmountValidation} />
 
 	{#if donationAmountValidation}
 		<p class="error">

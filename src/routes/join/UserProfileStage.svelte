@@ -57,9 +57,7 @@
 	{/if}
 
 	<NextPrev
-		disabled={!!usernameValidationError}
-		on:back
-		on:next
+		nextDisabled={!!usernameValidationError}
 		overrideNext={!username ? 'Skip' : null}
 	/>
 

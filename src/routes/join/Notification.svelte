@@ -58,7 +58,7 @@
 	</div>
 {/if}
 
-<NextPrev disabled={!permissionGrantedOrDenied && browserSupport} on:back on:next />
+<NextPrev nextDisabled={!permissionGrantedOrDenied && browserSupport} />
 
 <style lang="scss">
 	@import './shared.scss';

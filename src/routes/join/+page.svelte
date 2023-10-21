@@ -21,9 +21,9 @@
 	import { useHideScrollbars } from '$lib/utils';
 	import DonationStage from './DonationStage.svelte';
 	import VerifyEmail from './VerifyEmail.svelte';
-	import { onMount } from 'svelte';
 	import { browser } from '$app/environment';
 	import Notification from './Notification.svelte';
+	import { initNextPrevContext } from './NextPrev.svelte';
 
 	const STAGES = ['email', 'target', 'donation', 'username', 'notification', 'verifyemail'];
 
@@ -77,6 +77,13 @@
 	}
 
 	const hideSCrollbars = useHideScrollbars();
+
+	const nextPrevContext = initNextPrevContext({
+		onBack: previousStage,
+		onNext: nextStage,
+	});
+
+	$: $nextPrevContext.hasPrev = (currentStage > 0);
 </script>
 
 <svelte:window on:hashchange={(evt) => (hash = window.location.hash)} />
@@ -98,38 +105,30 @@
 		{#if stage == 'email'}
 			<EmailStage
 				bind:email={signupSessionData.email}
-				on:next={nextStage}
-				on:back={previousStage}
 			/>
 		{/if}
 		{#if stage == 'target'}
 			<TargetStage
 				bind:sleepTargetTime={signupSessionData.sleepTargetTime}
-				on:next={nextStage}
-				on:back={previousStage}
 			/>
 		{/if}
 		{#if stage == 'donation'}
 			<DonationStage
 				bind:donationAmount={signupSessionData.donationAmount}
 				bind:currency={signupSessionData.currency}
-				on:next={nextStage}
-				on:back={previousStage}
 			/>
 		{/if}
 		{#if stage == 'username'}
 			<UserProfileStage
 				bind:username={signupSessionData.username}
 				bind:profile_public={signupSessionData.profile_public}
-				on:next={nextStage}
-				on:back={previousStage}
 			/>
 		{/if}
 		{#if stage == 'notification'}
-			<Notification on:next={nextStage} on:back={previousStage} />
+			<Notification />
 		{/if}
 		{#if stage == 'verifyemail'}
-			<VerifyEmail on:next={nextStage} on:back={previousStage} />
+			<VerifyEmail />
 		{/if}
 	</div>
 {/key}

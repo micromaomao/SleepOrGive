@@ -54,7 +54,7 @@
 		bind:value={email}
 	/>
 
-	<NextPrev disabled={!EMAIL.test(email)} hasPrev={false} on:next />
+	<NextPrev nextDisabled={!EMAIL.test(email)} />
 </form>
 
 <style lang="scss">
