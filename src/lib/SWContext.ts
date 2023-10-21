@@ -1,6 +1,7 @@
 import { browser } from '$app/environment';
 import type { Readable, Subscriber, Unsubscriber } from 'svelte/store';
 import { AuthContext, authContextStore } from './AuthenticationContext';
+import { maybeShowLocalPersistentAlert, showTransientAlert } from '../routes/UserNotices.svelte';
 
 class SWContext implements Readable<SWContext> {
 	public browserSupport: boolean = false;
@@ -91,14 +92,37 @@ let instance: SWContext | null = null;
 if (browser) {
 	instance = new SWContext();
 	if (!instance.browserSupport) {
-		console.log('Browser does not support service workers');
+		maybeShowLocalPersistentAlert({
+			dismiss_key: 'push_not_supported',
+			intent: 'error',
+			message: 'Your browser does not support push notifications - sleep reminders will not show on this device.'
+		});
 	} else {
 		instance
 			.registerServiceWorker()
-			.then(async () => {
-				console.log('Service worker registered');
-				await instance.updateSubscriptions();
-			})
+			.then(
+				async () => {
+					console.log('Service worker registered');
+					try {
+						await instance.updateSubscriptions();
+					} catch (err) {
+						maybeShowLocalPersistentAlert({
+							dismiss_key: 'push_not_supported',
+							intent: 'error',
+							message: `Unable to update push notification subscriptions - reminders may not work on this browser.`
+						});
+						throw err;
+					}
+				},
+				(err) => {
+					maybeShowLocalPersistentAlert({
+						dismiss_key: 'push_not_supported',
+						intent: 'error',
+						message: `Sleep reminders will not work on this browser as we cannot set up push notification (ServiceWorker registration failed).`
+					});
+					throw err;
+				}
+			)
 			.catch((e) => {
 				console.error(e);
 				instance.updateError = e;

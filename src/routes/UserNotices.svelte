@@ -5,21 +5,51 @@
 		intent: 'error' | 'info';
 		message: string;
 	}
+	export interface ExplicitDismissAlert {
+		intent: 'error' | 'info';
+		message: string;
+		dismiss_key: string;
+	}
+	type Notice =
+		| ({ type: 'transient' } & TransientAlert)
+		| ({ type: 'explicit_dismiss_local' } & ExplicitDismissAlert);
 
-	export const transientAlerts = writable<TransientAlert[]>([]);
+	export const allNotices = writable<Notice[]>([]);
+
+	const localDismissStore = useLocalStorage<string[]>('localDismissedNotices', []);
 
 	export function showTransientAlert(alert: TransientAlert) {
-		transientAlerts.update((alerts) => [...alerts, alert]);
+		allNotices.update((notices) => [...notices, { type: 'transient', ...alert }]);
 	}
 
-	export function dismissTransientAlert(alert: TransientAlert) {
-		transientAlerts.update((alerts) => alerts.filter((a) => a !== alert));
+	function removeDismissed() {
+		let dismissedKeys = localDismissStore.get();
+		allNotices.update((notices) =>
+			notices.filter((n) => {
+				if (n.type == 'explicit_dismiss_local') {
+					return !dismissedKeys.includes(n.dismiss_key);
+				} else {
+					return true;
+				}
+			})
+		);
 	}
 
-	showTransientAlert({
-		intent: 'info',
-		message: 'This is an info message.'
+	localDismissStore.subscribe((keys) => {
+		removeDismissed();
 	});
+
+	export function maybeShowLocalPersistentAlert(alert: ExplicitDismissAlert) {
+		allNotices.update((notices) => [...notices, { type: 'explicit_dismiss_local', ...alert }]);
+		removeDismissed();
+	}
+
+	export function dismiss(notice: Notice) {
+		allNotices.update((notices) => notices.filter((n) => n !== notice));
+		if (notice.type == 'explicit_dismiss_local') {
+			localDismissStore.update((keys) => [...keys, notice.dismiss_key]);
+		}
+	}
 </script>
 
 <script lang="ts">
@@ -28,18 +58,23 @@
 	import { flip } from 'svelte/animate';
 	import { cubicInOut } from 'svelte/easing';
 	import { fade } from 'svelte/transition';
+	import { useLocalStorage } from '$lib/useLocalStorage';
 </script>
 
-{#each $transientAlerts as alert (alert)}
+{#each $allNotices as notice (notice)}
 	<div
 		animate:flip={{ duration: 200, easing: cubicInOut }}
 		transition:fade={{ duration: 200, easing: cubicInOut }}
 	>
-		<Alert intent={alert.intent} style="margin: 0;">
-			{alert.message}
+		<Alert intent={notice.intent} style="margin: 0;">
+			{notice.message}
 
 			<span slot="actions">
-				<CloseButton on:click={() => dismissTransientAlert(alert)} />
+				{#if notice.type == 'transient'}
+					<CloseButton on:click={() => dismiss(notice)} />
+				{:else if notice.type == 'explicit_dismiss_local'}
+					<button class="link" on:click={() => dismiss(notice)}>Don't show again</button>
+				{/if}
 			</span>
 		</Alert>
 	</div>

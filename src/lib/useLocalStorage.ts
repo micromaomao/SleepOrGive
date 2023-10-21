@@ -1,11 +1,13 @@
 import { browser } from '$app/environment';
-import { writable, type Subscriber, type Writable } from 'svelte/store';
+import { writable, type Subscriber, type Writable, get } from 'svelte/store';
 
 const localStorageSubscriptions: Map<string, Set<Subscriber<unknown>>> = new Map();
 
-export function useLocalStorage<T>(key: string, initialValue: T): Writable<T> {
+export function useLocalStorage<T>(key: string, initialValue: T): Writable<T> & { get(): T } {
 	if (!browser) {
-		return writable(initialValue);
+		let store: any = writable(initialValue);
+		store.get = () => get(store);
+		return store;
 	}
 	let obj = {
 		set(value: T) {

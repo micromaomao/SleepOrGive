@@ -75,8 +75,15 @@
 		vertical-align: -2px;
 	}
 
+	.alert > :global(*) {
+		flex-grow: 0;
+		flex-shrink: 0;
+	}
+
 	.text {
 		margin-left: 5px;
 		margin-right: auto;
+		flex-grow: 1;
+		flex-shrink: 1;
 	}
 </style>
