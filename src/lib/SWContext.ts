@@ -2,6 +2,7 @@ import { browser } from '$app/environment';
 import type { Readable, Subscriber, Unsubscriber } from 'svelte/store';
 import { AuthContext, authContextStore } from './AuthenticationContext';
 import { maybeShowLocalPersistentAlert, showTransientAlert } from '../routes/UserNotices.svelte';
+import JustText from './components/JustText.svelte';
 
 class SWContext implements Readable<SWContext> {
 	public browserSupport: boolean = false;
@@ -39,6 +40,13 @@ class SWContext implements Readable<SWContext> {
 		}
 	}
 
+	private async updatePermissionState() {
+		this.pushPermissionState = await this.swRegistration.pushManager.permissionState({
+			userVisibleOnly: true
+		});
+		this.notify();
+	}
+
 	async registerServiceWorker() {
 		if (!this.browserSupport) {
 			return;
@@ -53,9 +61,7 @@ class SWContext implements Readable<SWContext> {
 			if (!this.swRegistration) {
 				throw new Error('Service worker registration failed');
 			}
-			this.pushPermissionState = await this.swRegistration.pushManager.permissionState({
-				userVisibleOnly: true
-			});
+			await this.updatePermissionState();
 		} catch (e) {
 			console.error(e);
 			this.browserSupport = false;
@@ -71,6 +77,7 @@ class SWContext implements Readable<SWContext> {
 		}
 		if (this.authContext.bearer) {
 			this.pushSubscription = await this.swRegistration.pushManager.getSubscription();
+			// TODO
 		}
 		this.notify();
 	}
@@ -86,6 +93,14 @@ class SWContext implements Readable<SWContext> {
 			this.notify();
 		}
 	}
+
+	async promptPermission() {
+		if (!this.browserSupport || !this.swRegistration) {
+			throw new Error('Service worker not registered');
+		}
+		await Notification.requestPermission();
+		await this.updatePermissionState();
+	}
 }
 
 let instance: SWContext | null = null;
@@ -95,7 +110,10 @@ if (browser) {
 		maybeShowLocalPersistentAlert({
 			dismiss_key: 'push_not_supported',
 			intent: 'error',
-			message: 'Your browser does not support push notifications - sleep reminders will not show on this device.'
+			component: JustText,
+			props: {
+				text: 'Your browser does not support push notifications - sleep reminders will not show on this device.'
+			}
 		});
 	} else {
 		instance
@@ -109,7 +127,10 @@ if (browser) {
 						maybeShowLocalPersistentAlert({
 							dismiss_key: 'push_not_supported',
 							intent: 'error',
-							message: `Unable to update push notification subscriptions - reminders may not work on this browser.`
+							component: JustText,
+							props: {
+								text: `Unable to update push notification subscriptions - reminders may not work on this browser.`
+							}
 						});
 						throw err;
 					}
@@ -118,7 +139,10 @@ if (browser) {
 					maybeShowLocalPersistentAlert({
 						dismiss_key: 'push_not_supported',
 						intent: 'error',
-						message: `Sleep reminders will not work on this browser as we cannot set up push notification (ServiceWorker registration failed).`
+						component: JustText,
+						props: {
+							text: `Sleep reminders will not work on this browser as we could not set up push notification (ServiceWorker registration failed).`
+						}
 					});
 					throw err;
 				}

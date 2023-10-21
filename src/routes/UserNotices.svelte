@@ -1,24 +1,26 @@
 <script lang="ts" context="module">
 	import { writable } from 'svelte/store';
+	import { useLocalStorage } from '$lib/useLocalStorage';
 
-	export interface TransientAlert {
+	export interface NoticeContent<P extends object> {
 		intent: 'error' | 'info';
-		message: string;
+		component: typeof SvelteComponent<P>;
+		props: P;
 	}
-	export interface ExplicitDismissAlert {
-		intent: 'error' | 'info';
-		message: string;
+
+	export interface TransientAlert<P extends object> extends NoticeContent<P> {}
+	export interface ExplicitDismissAlert<P extends object> extends NoticeContent<P> {
 		dismiss_key: string;
 	}
-	type Notice =
-		| ({ type: 'transient' } & TransientAlert)
-		| ({ type: 'explicit_dismiss_local' } & ExplicitDismissAlert);
+	type Notice<P extends object> =
+		| ({ type: 'transient' } & TransientAlert<P>)
+		| ({ type: 'explicit_dismiss_local' } & ExplicitDismissAlert<P>);
 
-	export const allNotices = writable<Notice[]>([]);
+	export const allNotices = writable<Notice<any>[]>([]);
 
 	const localDismissStore = useLocalStorage<string[]>('localDismissedNotices', []);
 
-	export function showTransientAlert(alert: TransientAlert) {
+	export function showTransientAlert<P extends object>(alert: TransientAlert<P>) {
 		allNotices.update((notices) => [...notices, { type: 'transient', ...alert }]);
 	}
 
@@ -39,12 +41,17 @@
 		removeDismissed();
 	});
 
-	export function maybeShowLocalPersistentAlert(alert: ExplicitDismissAlert) {
-		allNotices.update((notices) => [...notices, { type: 'explicit_dismiss_local', ...alert }]);
+	export function maybeShowLocalPersistentAlert<P extends object>(alert: ExplicitDismissAlert<P>) {
+		allNotices.update((notices) => [
+			...notices.filter(
+				(n) => !(n.type == 'explicit_dismiss_local' && n.dismiss_key == alert.dismiss_key)
+			),
+			{ type: 'explicit_dismiss_local', ...alert }
+		]);
 		removeDismissed();
 	}
 
-	export function dismiss(notice: Notice) {
+	export function dismiss(notice: Notice<any>) {
 		allNotices.update((notices) => notices.filter((n) => n !== notice));
 		if (notice.type == 'explicit_dismiss_local') {
 			localDismissStore.update((keys) => [...keys, notice.dismiss_key]);
@@ -58,7 +65,7 @@
 	import { flip } from 'svelte/animate';
 	import { cubicInOut } from 'svelte/easing';
 	import { fade } from 'svelte/transition';
-	import { useLocalStorage } from '$lib/useLocalStorage';
+	import type { SvelteComponent } from 'svelte';
 </script>
 
 {#each $allNotices as notice (notice)}
@@ -67,7 +74,7 @@
 		transition:fade={{ duration: 200, easing: cubicInOut }}
 	>
 		<Alert intent={notice.intent} style="margin: 0;">
-			{notice.message}
+			<svelte:component this={notice.component} {...notice.props} />
 
 			<span slot="actions">
 				{#if notice.type == 'transient'}

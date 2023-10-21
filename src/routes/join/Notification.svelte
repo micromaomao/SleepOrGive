@@ -1,7 +1,8 @@
 <script lang="ts">
 	import { getServiceWorkerContext } from '$lib/SWContext';
 	import Alert from '$lib/components/Alert.svelte';
-	import NextPrev from './NextPrev.svelte';
+	import NotificationAdvanceTimesInput from '$lib/components/NotificationAdvanceTimesInput.svelte';
+	import NextPrev, { useNextPrevContext } from './NextPrev.svelte';
 
 	const swContext = getServiceWorkerContext();
 
@@ -10,9 +11,16 @@
 	$: browserSupport = $swContext.browserSupport;
 	$: permissionState = $swContext.pushPermissionState;
 
+	let initialNeutral = swContext.pushPermissionState == 'prompt';
+
 	$: if (permissionState == 'granted' || permissionState == 'denied') {
 		permissionGrantedOrDenied = true;
 	}
+
+	const nextPrevContext = useNextPrevContext();
+
+	const DEFAULT = [30, 10, 5, 0, -5, -10, -30];
+	export let sleepNotificationAdvanceTimes: number[] = DEFAULT;
 </script>
 
 <h1>
@@ -34,20 +42,39 @@
 		{#if permissionState == 'denied'}
 			<Alert intent="error">
 				You have denied the permission to send notification. You can re-enable it in your browser's
-				site settings menu.
+				site settings menu, or proceed without enabling notification.
 			</Alert>
 		{:else if permissionState == 'granted'}
-			<Alert intent="success">You have already granted the permission to send notification.</Alert>
+			<Alert intent="success">
+				{#if initialNeutral}
+					Thanks you!
+				{:else}
+					You have already granted the permission to send notification.
+				{/if}
+			</Alert>
 		{:else}
-			<button>Grant notification permission</button>
-			<button class="link">Skip for now</button>
+			<button on:click={(evt) => swContext.promptPermission()}>Grant notification permission</button
+			>
+			<button
+				class="link"
+				on:click={(evt) => {
+					permissionGrantedOrDenied = true;
+					$nextPrevContext.onNext();
+				}}>Skip for now</button
+			>
 		{/if}
 	</div>
 
 	<details class="customize">
-		<summary>Customize notification</summary>
+		<summary>Customize sleep reminders</summary>
 
-		Send notification at the following time:
+		<p>
+			Send notification at the following time:
+			<button class="link" on:click={(evt) => (sleepNotificationAdvanceTimes = DEFAULT)}>
+				Restore default
+			</button>
+		</p>
+		<NotificationAdvanceTimesInput bind:sleepNotificationAdvanceTimes />
 	</details>
 {:else}
 	<div style="margin-top: 10px;">

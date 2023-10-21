@@ -13,13 +13,11 @@ export function useHideScrollbars(): (hide: boolean) => void {
 	function hideScrollBars() {
 		document.documentElement.style.overflow = 'hidden';
 		document.body.style.overflow = 'hidden';
-		console.log('hidden');
 	}
 
 	function unhideScrollBars() {
 		document.documentElement.style.overflow = '';
 		document.body.style.overflow = '';
-		console.log('unhidden');
 	}
 
 	onMount(() => {
