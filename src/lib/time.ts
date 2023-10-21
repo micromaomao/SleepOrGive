@@ -40,3 +40,11 @@ if (browser) {
 	}
 	adjustClockSkew();
 }
+
+export function baseHourForTarget(target: [number, number, number]): number {
+	let b = target[0] - 12;
+	if (b < 0) {
+		b += 24;
+	}
+	return b;
+}

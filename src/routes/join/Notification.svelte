@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { getServiceWorkerContext } from '$lib/SWContext';
 	import Alert from '$lib/components/Alert.svelte';
-	import NotificationAdvanceTimesInput from '$lib/components/NotificationAdvanceTimesInput.svelte';
+	import NotificationOffsetsInput from '$lib/components/NotificationOffsetsInput.svelte';
 	import NextPrev, { useNextPrevContext } from './NextPrev.svelte';
 
 	const swContext = getServiceWorkerContext();
@@ -19,8 +19,10 @@
 
 	const nextPrevContext = useNextPrevContext();
 
-	const DEFAULT = [30, 10, 5, 0, -5, -10, -30];
-	export let sleepNotificationAdvanceTimes: number[] = DEFAULT;
+	const DEFAULT = [-30, -10, -5, 0, 5, 10, 30];
+	export let sleepNotificationTimeOffsets: number[] = DEFAULT;
+
+	export let sleepTarget: string;
 </script>
 
 <h1>
@@ -69,12 +71,16 @@
 		<summary>Customize sleep reminders</summary>
 
 		<p>
-			Send notification at the following time:
-			<button class="link" on:click={(evt) => (sleepNotificationAdvanceTimes = DEFAULT)}>
+			Send reminder at the following time:
+			<button class="link" on:click={(evt) => (sleepNotificationTimeOffsets = DEFAULT)}>
 				Restore default
 			</button>
 		</p>
-		<NotificationAdvanceTimesInput bind:sleepNotificationAdvanceTimes />
+		<NotificationOffsetsInput bind:sleepNotificationTimeOffsets {sleepTarget} />
+		<p>
+			Reminders will only be sent if you have not started sleeping. Due to web technology
+			limitations, an Internet connection is required for the reminders to trigger.
+		</p>
 	</details>
 {:else}
 	<div style="margin-top: 10px;">

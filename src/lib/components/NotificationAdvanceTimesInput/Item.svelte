@@ -1,40 +1,70 @@
 <script lang="ts">
 	import { createEventDispatcher } from 'svelte';
 	import Delete from '@fluentui/svg-icons/icons/delete_20_regular.svg?component';
+	import { parseTime } from '$lib/textutils';
 
 	const dispatch = createEventDispatcher();
 
-	export let minutes: number | undefined;
+	export let minutes: number | null;
 	export let empty: boolean;
 
-	let input_value: string | number = empty ? '' : Math.abs(minutes);
-	let before: boolean = empty ? true : minutes >= 0;
+	export let sleepTarget: string;
+	let parsedTarget: [number, number, number];
+	$: parsedTarget = parseTime(sleepTarget);
 
-	function confirm() {
-		if (input_value === '') {
+	function offsetToTime(minutes: number): string {
+		let t = parsedTarget[0] * 60 + parsedTarget[1];
+		t += minutes;
+		if (t < 0) {
+			t += 24 * 60;
+		}
+		if (t > 24 * 60) {
+			t -= 24 * 60;
+		}
+		let h = Math.floor(t / 60);
+		let m = t % 60;
+		return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}`;
+	}
+
+	function timeToOffset(time: string): number {
+		let parsed = parseTime(time);
+		let t = parsed[0] * 60 + parsed[1];
+		let targetT = parsedTarget[0] * 60 + parsedTarget[1];
+		let offset = t - targetT;
+		if (offset < -12 * 60) {
+			offset += 24 * 60;
+		}
+		if (offset > 12 * 60) {
+			offset -= 24 * 60;
+		}
+		return offset;
+	}
+
+	let input_value: string = '';
+	$: if (!empty && parsedTarget) {
+		input_value = offsetToTime(minutes);
+	}
+
+	let confirmDispatchTimeout = null;
+
+	function confirm(evt: Event) {
+		let parsedInput: [number, number, number];
+		input_value = (evt.target as HTMLInputElement).value;
+		try {
+			parsedInput = parseTime(input_value);
+		} catch (e) {
 			minutes = null;
 			empty = true;
-		} else {
-			minutes = Number(input_value);
-			empty = false;
-			if (Number.isNaN(minutes) || !Number.isSafeInteger(minutes)) {
-				minutes = null;
-			}
+			return;
 		}
-		if (minutes !== null) {
-			if (minutes < 0) {
-				before = !before;
-				minutes = -minutes;
-			}
-			if (!before) {
-				minutes = -minutes;
-			}
-			input_value = Math.abs(minutes);
+		minutes = timeToOffset(input_value);
+		empty = false;
+		input_value = offsetToTime(minutes);
+		if (confirmDispatchTimeout !== null) {
+			clearTimeout(confirmDispatchTimeout);
 		}
-		if (minutes != 0 && !empty) {
-			before = minutes >= 0;
-		}
-		setTimeout(() => {
+		confirmDispatchTimeout = setTimeout(() => {
+			confirmDispatchTimeout = null;
 			dispatch('confirm');
 		}, 500);
 	}
@@ -42,27 +72,29 @@
 
 <div class="container">
 	<input
-		type="text"
-		min="0"
-		bind:value={input_value}
+		type="time"
+		value={input_value}
 		on:blur={confirm}
+		on:change={confirm}
 		on:keypress={(evt) => {
 			if (evt.key == 'Enter') {
-				confirm();
+				// @ts-ignore
+				confirm(evt.target.value);
 			}
 		}}
 	/>
-	<span> minutes </span>
-	<div class="beforeafter">
-		<label>
-			<input type="radio" bind:group={before} value={true} on:change={confirm} />
-			before
-		</label>
-		<label>
-			<input type="radio" bind:group={before} value={false} on:change={confirm} />
-			after (if sleep not started)
-		</label>
-	</div>
+	<span class="desc">
+		{#if !empty && input_value === offsetToTime(minutes)}
+			({#if minutes < 0}
+				{-minutes} minutes before
+			{:else if minutes > 0}
+				{minutes} minutes after
+			{:else}
+				at
+			{/if}
+			target time)
+		{/if}
+	</span>
 	{#if !empty}
 		<button
 			class="link delete"
@@ -70,6 +102,10 @@
 				minutes = null;
 				empty = false;
 				input_value = '';
+				if (confirmDispatchTimeout) {
+					clearTimeout(confirmDispatchTimeout);
+					confirmDispatchTimeout = null;
+				}
 				dispatch('confirm');
 			}}
 		>
@@ -84,17 +120,20 @@
 		flex-direction: row;
 		flex-wrap: nowrap;
 		justify-content: flex-start;
-    align-items: center;
+		align-items: center;
 		gap: 10px;
 	}
 
-	input[type='text'] {
+	input {
 		width: 150px;
-		flex: 0 0;
+		flex-grow: 0;
+		flex-shrink: 0;
 	}
 
-	.beforeafter {
-		flex: 0 0 auto;
+	.desc,
+	button {
+		flex-grow: 0;
+		flex-shrink: 0;
 	}
 
 	button :global(svg) {

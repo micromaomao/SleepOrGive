@@ -3,7 +3,8 @@
 	import Item from './NotificationAdvanceTimesInput/Item.svelte';
 	import { fade } from 'svelte/transition';
 
-	export let sleepNotificationAdvanceTimes: number[];
+	export let sleepNotificationTimeOffsets: number[];
+	export let sleepTarget: string;
 
 	interface ItemData {
 		minutes?: number;
@@ -12,8 +13,8 @@
 
 	let items: ItemData[];
 
-	function populateItems(sleepNotificationAdvanceTimes: number[]) {
-		let newItems: ItemData[] = sleepNotificationAdvanceTimes.map((x) => ({
+	function populateItems(sleepNotificationTimeOffsets: number[]) {
+		let newItems: ItemData[] = sleepNotificationTimeOffsets.map((x) => ({
 			minutes: x,
 			empty: false
 		}));
@@ -35,20 +36,25 @@
 		items = newItems;
 	}
 
-	$: populateItems(sleepNotificationAdvanceTimes);
+	$: populateItems(sleepNotificationTimeOffsets);
 
 	function repopulateList() {
 		let newList = items
 			.filter((x) => !x.empty && x.minutes !== null)
 			.map((x) => Math.round(x.minutes));
 		newList = Array.from(new Set(newList));
-		newList.sort((a, b) => b - a);
-		sleepNotificationAdvanceTimes = newList;
+		newList.sort((a, b) => a - b);
+		sleepNotificationTimeOffsets = newList;
 	}
 </script>
 
 {#each items as item (item)}
 	<div animate:flip={{ duration: 200 }} transition:fade={{ duration: 200 }}>
-		<Item bind:minutes={item.minutes} bind:empty={item.empty} on:confirm={repopulateList} />
+		<Item
+			bind:minutes={item.minutes}
+			bind:empty={item.empty}
+			on:confirm={repopulateList}
+			{sleepTarget}
+		/>
 	</div>
 {/each}

@@ -25,7 +25,7 @@ create table users (
   donation_per_minute decimal default null,
   is_public boolean default null, -- null means not asked
   last_monthly_process_time timestamptz default null,
-  sleep_notification_advance_times interval[] not null
+  sleep_notification_times_offsets interval[] not null
 );
 
 create unique index username_ignorecase on users (lower(username)) where username is not null;

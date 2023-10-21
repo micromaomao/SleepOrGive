@@ -7,7 +7,7 @@
 		sleepTargetTime?: string;
 		donationAmount?: string;
 		currency?: string;
-		sleepNotificationAdvanceTimes: number[];
+		sleepNotificationTimeOffsets: number[];
 	}
 </script>
 
@@ -123,7 +123,8 @@
 		{/if}
 		{#if stage == 'notification'}
 			<Notification
-				bind:sleepNotificationAdvanceTimes={signupSessionData.sleepNotificationAdvanceTimes}
+				bind:sleepNotificationTimeOffsets={signupSessionData.sleepNotificationTimeOffsets}
+				sleepTarget={signupSessionData.sleepTargetTime}
 			/>
 		{/if}
 		{#if stage == 'verifyemail'}
