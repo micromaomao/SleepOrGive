@@ -16,7 +16,7 @@
 </script>
 
 <div class={'alert ' + intent} {style}>
-	<div class="icon">
+	<span class="icon">
 		{#if intent === 'error'}
 			<ErrorCircle />
 		{/if}
@@ -26,15 +26,16 @@
 		{#if intent == 'success'}
 			<CheckmarkCircle />
 		{/if}
-	</div>
+	</span>
 
-	<div class="text">
+	<span class="text">
 		<slot />
-	</div>
+	</span>
 
 	{#if hasRetry}
 		<button class="link retry" on:click={handleRetry}>Retry</button>
 	{/if}
+	<slot name="actions" />
 </div>
 
 <style>
@@ -68,16 +69,14 @@
 	.icon {
 		flex-shrink: 0;
 		flex-grow: 0;
-		display: flex;
-		flex-direction: column;
-		justify-content: center;
+	}
+
+	.icon :global(svg) {
+		vertical-align: -2px;
 	}
 
 	.text {
 		margin-left: 5px;
-	}
-
-	.retry {
-		margin-left: auto;
+		margin-right: auto;
 	}
 </style>

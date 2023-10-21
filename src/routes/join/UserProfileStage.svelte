@@ -56,10 +56,7 @@
 		</label>
 	{/if}
 
-	<NextPrev
-		nextDisabled={!!usernameValidationError}
-		overrideNext={!username ? 'Skip' : null}
-	/>
+	<NextPrev nextDisabled={!!usernameValidationError} overrideNext={!username ? 'Skip' : null} />
 
 	<div class="error">
 		{#if usernameValidationError}

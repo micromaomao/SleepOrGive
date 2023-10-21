@@ -80,10 +80,10 @@
 
 	const nextPrevContext = initNextPrevContext({
 		onBack: previousStage,
-		onNext: nextStage,
+		onNext: nextStage
 	});
 
-	$: $nextPrevContext.hasPrev = (currentStage > 0);
+	$: $nextPrevContext.hasPrev = currentStage > 0;
 </script>
 
 <svelte:window on:hashchange={(evt) => (hash = window.location.hash)} />
@@ -103,14 +103,10 @@
 		on:introend={() => hideSCrollbars(false)}
 	>
 		{#if stage == 'email'}
-			<EmailStage
-				bind:email={signupSessionData.email}
-			/>
+			<EmailStage bind:email={signupSessionData.email} />
 		{/if}
 		{#if stage == 'target'}
-			<TargetStage
-				bind:sleepTargetTime={signupSessionData.sleepTargetTime}
-			/>
+			<TargetStage bind:sleepTargetTime={signupSessionData.sleepTargetTime} />
 		{/if}
 		{#if stage == 'donation'}
 			<DonationStage

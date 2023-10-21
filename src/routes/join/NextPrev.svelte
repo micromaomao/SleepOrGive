@@ -1,7 +1,7 @@
 <script lang="ts" context="module">
 	import { getContext, setContext } from 'svelte';
 	import { writable, type Readable, type Writable } from 'svelte/store';
-	export const ContextKey = Symbol("NextPrev:ContextKey");
+	export const ContextKey = Symbol('NextPrev:ContextKey');
 	export interface Context {
 		hasPrev?: boolean;
 		overrideNext?: string;
@@ -18,11 +18,12 @@
 	export function useNextPrevContext(): Readable<Context> {
 		const context = getContext<Writable<Context>>(ContextKey);
 		if (context === undefined) {
-			throw new Error("NextPrev: No context found");
+			throw new Error('NextPrev: No context found');
 		}
 		return context;
 	}
 </script>
+
 <script lang="ts">
 	export let nextDisabled: boolean = false;
 	export let overrideNext: string | undefined = undefined;

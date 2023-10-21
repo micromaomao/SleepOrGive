@@ -1,10 +1,11 @@
 import { browser } from '$app/environment';
-import type { Subscriber, Unsubscriber } from 'svelte/store';
-import { subscribeAuthContext, AuthContext } from './AuthenticationContext';
+import type { Readable, Subscriber, Unsubscriber } from 'svelte/store';
+import { AuthContext, authContextStore } from './AuthenticationContext';
 
-class SWContext {
+class SWContext implements Readable<SWContext> {
 	public browserSupport: boolean = false;
 	public pushPermissionState: PermissionState = 'prompt';
+	public updateError: Error | null = null;
 
 	private unsubscribeAuthContext: (() => void) | null = null;
 	private swRegistration: ServiceWorkerRegistration | null = null;
@@ -20,7 +21,7 @@ class SWContext {
 		}
 
 		this.handleAuthContextChange = this.handleAuthContextChange.bind(this);
-		this.unsubscribeAuthContext = subscribeAuthContext(this.handleAuthContextChange);
+		this.unsubscribeAuthContext = authContextStore.subscribe(this.handleAuthContextChange);
 	}
 
 	subscribe(fn: Subscriber<SWContext>): Unsubscriber {
@@ -31,7 +32,7 @@ class SWContext {
 		};
 	}
 
-	private notify() {
+	notify() {
 		for (const fn of this.subscribers) {
 			fn(this);
 		}
@@ -64,7 +65,7 @@ class SWContext {
 	}
 
 	async updateSubscriptions() {
-		if (!this.browserSupport || !this.swRegistration) {
+		if (!this.browserSupport || !this.swRegistration || !this.authContext) {
 			return;
 		}
 		if (this.authContext.bearer) {
@@ -79,7 +80,7 @@ class SWContext {
 			await this.updateSubscriptions();
 		} catch (e) {
 			console.error(e);
-			// TODO
+			// TODO: show error to user
 		} finally {
 			this.notify();
 		}
@@ -99,8 +100,9 @@ if (browser) {
 				await instance.updateSubscriptions();
 			})
 			.catch((e) => {
-				console.error('Error registering service worker');
 				console.error(e);
+				instance.updateError = e;
+				instance.notify();
 			});
 	}
 }

@@ -10,11 +10,7 @@ export interface RateLimitBumpResponse {
 }
 
 export class RateLimit {
-	constructor(
-		public readonly key: string,
-		public limit: number,
-		public reset_period: number
-	) {
+	constructor(public readonly key: string, public limit: number, public reset_period: number) {
 		if (limit <= 0 || reset_period <= 0) {
 			throw new Error('Invalid rate limit configuration');
 		}

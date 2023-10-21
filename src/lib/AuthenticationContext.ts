@@ -2,9 +2,13 @@ import { browser } from '$app/environment';
 import { getContext, setContext } from 'svelte';
 import { get, writable, type Readable, type Writable, type Unsubscriber } from 'svelte/store';
 import type { UserData } from './shared_types';
+import { useLocalStorage } from './useLocalStorage';
 
 const CONTEXT_KEY = Symbol('auth context key');
-const LOCALSTORAGE_BEARER_KEY = 'session_bearer';
+const authTokenStore: Writable<string | null> | null = browser
+	? useLocalStorage('session_bearer', null)
+	: null;
+export const authContextStore: Writable<AuthContext> | null = browser ? writable(null) : null;
 
 export class AuthContext {
 	constructor(
@@ -37,66 +41,63 @@ export class AuthContext {
 	}
 }
 
-function createInitContext(store: Writable<AuthContext>) {
+function createInitContext(contextStore: Writable<AuthContext>) {
 	let initialContext = new AuthContext(null);
 
-	if (browser) {
-		let bearer = window.localStorage.getItem(LOCALSTORAGE_BEARER_KEY);
-		if (bearer) {
-			initialContext = new AuthContext(bearer);
-		}
-	}
+	if (authTokenStore) {
+		let previousAbortController: AbortController | null = null;
 
-	store.set(initialContext);
-
-	if (browser && initialContext.bearer) {
-		fetch('/api/v1/user/me', {
-			headers: { Authorization: `Bearer ${initialContext.bearer}` }
-		}).then(
-			async (r) => {
+		let unsubscribe = authTokenStore.subscribe(async (bearer) => {
+			if (previousAbortController) {
+				previousAbortController.abort();
+				previousAbortController = null;
+			}
+			if (bearer) {
+				initialContext = new AuthContext(bearer);
+			}
+			let abortController = new AbortController();
+			previousAbortController = abortController;
+			try {
+				let r = await fetch('/api/v1/user/me', {
+					headers: { Authorization: `Bearer ${initialContext.bearer}` },
+					signal: abortController.signal
+				});
+				if (abortController.signal.aborted) {
+					return;
+				}
 				if (!r.ok) {
-					store.update((old) => {
-						if (old.bearer != initialContext.bearer) {
-							return old;
-						}
-						return new AuthContext(null);
-					});
+					contextStore.set(new AuthContext(null));
+					// TODO: show error to user...?
 					return;
 				}
 				let json: UserData = await r.json();
-				store.update((old) => {
-					if (old.bearer != initialContext.bearer) {
-						return old;
-					}
-					return new AuthContext(initialContext.bearer, json.user_id, json.username, json.timezone);
-				});
-			},
-			(err) => {
+				if (abortController.signal.aborted) {
+					return;
+				}
+				contextStore.set(
+					new AuthContext(initialContext.bearer, json.user_id, json.username, json.timezone)
+				);
+			} catch (err) {
+				if (abortController.signal.aborted) {
+					return;
+				}
 				console.error(err);
 				setTimeout(() => {
-					if (get(store).bearer == initialContext.bearer) {
-						reset(store, false);
+					if (abortController.signal.aborted) {
+						return;
 					}
+					authTokenStore.update((b) => b);
 				}, 1000);
 			}
-		);
+		});
 	}
-}
 
-let globalStoreReference: Writable<AuthContext> | null = null;
-if (browser) {
-	globalStoreReference = writable(undefined);
-	createInitContext(globalStoreReference);
+	contextStore.set(initialContext);
 }
 
 export function initAuthContext(): Writable<AuthContext> {
-	let store: Writable<AuthContext>;
-	if (browser) {
-		store = globalStoreReference;
-	} else {
-		store = writable<AuthContext>(undefined);
-		createInitContext(store);
-	}
+	let store = authContextStore ?? writable(null);
+	createInitContext(store);
 	setContext(CONTEXT_KEY, store);
 	return store;
 }
@@ -105,26 +106,23 @@ export function useAuthContext(): Writable<AuthContext> {
 	return getContext(CONTEXT_KEY);
 }
 
-export function reset(ctx: Writable<AuthContext>, clearStorage: boolean = true) {
-	if (clearStorage) {
-		window.localStorage.removeItem(LOCALSTORAGE_BEARER_KEY);
+export function refreshAuthContext() {
+	if (!browser) {
+		throw new Error('Not available on server side');
 	}
-	createInitContext(ctx);
+	authTokenStore.update((b) => b);
+}
+
+export function logout() {
+	if (!browser) {
+		throw new Error('Not available on server side');
+	}
+	authTokenStore.set(null);
 }
 
 export function getAuthContext(): AuthContext {
 	if (!browser) {
 		throw new Error('Not available on server side');
 	}
-	if (!globalStoreReference) {
-		throw new Error('AuthContext not initialized');
-	}
-	return get(globalStoreReference);
-}
-
-export function subscribeAuthContext(fn: (authContext: AuthContext) => void): Unsubscriber {
-	if (!browser) {
-		throw new Error('Not available on server side');
-	}
-	return globalStoreReference.subscribe(fn);
+	return get(authContextStore);
 }

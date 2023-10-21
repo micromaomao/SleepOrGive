@@ -2,12 +2,13 @@
 	import './style.scss';
 
 	import { page } from '$app/stores';
-	import { initAuthContext, reset as resetAuth, useAuthContext } from '$lib/AuthenticationContext';
+	import { initAuthContext, logout } from '$lib/AuthenticationContext';
 	import { TimezoneContext, newTimezoneContext } from '$lib/TimezoneContext';
 	import '$lib/SWContext';
 
 	// Initialize client clock skew
 	import '$lib/time';
+	import UserNotices, { showTransientAlert } from './UserNotices.svelte';
 
 	const authContext = initAuthContext();
 	const timezoneContext = newTimezoneContext();
@@ -23,9 +24,12 @@
 	async function handleLogout() {
 		try {
 			await $authContext.fetch('/api/v1/logout', { method: 'POST' });
-			resetAuth(authContext);
+			logout();
 		} catch (e) {
-			// TODO
+			showTransientAlert({
+				intent: 'error',
+				message: 'Failed to log out: ' + e.message
+			});
 		}
 	}
 
@@ -40,42 +44,53 @@
 	<meta property="og:site_name" content="SleepOrGive" />
 </svelte:head>
 
-<nav>
-	<span class="sitename">
-		{#if isHome}
-			<a href="https://maowtm.org" target="_blank">mw</a> /
-		{/if}
-		<a href="/" class="sitename-link">SleepOrGive</a>
-		{#if isHome}
-			&mdash; Start sleeping earlier today!
-		{:else if isAdminPage}
-			Admin center
-		{/if}
-	</span>
-	<span class="user">
-		{#if isLoggedIn}
-			<a href="/overview">{username}</a>
-			<a
-				on:click={handleLogout}
-				on:keydown={(e) => e.key == 'Enter' && handleLogout()}
-				role="link"
-				tabindex="0">Logout</a
-			>
-		{:else}
-			<a href="/login">Login</a>
-			{#if $page.route.id != '/join'}
-				<a href="/join">Sign up</a>
+<div class="container">
+	<nav>
+		<span class="sitename">
+			{#if isHome}
+				<a href="https://maowtm.org" target="_blank">mw</a> /
 			{/if}
-			<a href="https://github.com/micromaomao/SleepOrGive" target="_blank" class="gh">
-				<img src="/images/github-mark.svg" alt="GitHub" width="16" height="16" />
-			</a>
-		{/if}
-	</span>
-</nav>
+			<a href="/" class="sitename-link">SleepOrGive</a>
+			{#if isHome}
+				&mdash; Start sleeping earlier today!
+			{:else if isAdminPage}
+				Admin center
+			{/if}
+		</span>
+		<span class="user">
+			{#if isLoggedIn}
+				<a href="/overview">{username}</a>
+				<a
+					on:click={handleLogout}
+					on:keydown={(e) => e.key == 'Enter' && handleLogout()}
+					role="link"
+					tabindex="0">Logout</a
+				>
+			{:else}
+				<a href="/login">Login</a>
+				{#if $page.route.id != '/join'}
+					<a href="/join">Sign up</a>
+				{/if}
+				<a href="https://github.com/micromaomao/SleepOrGive" target="_blank" class="gh">
+					<img src="/images/github-mark.svg" alt="GitHub" width="16" height="16" />
+				</a>
+			{/if}
+		</span>
+	</nav>
+	<div class="notices">
+		<UserNotices />
+	</div>
+</div>
 
 <slot />
 
 <style>
+	.container {
+		position: sticky;
+		top: 0;
+		height: auto;
+	}
+
 	nav {
 		background-color: var(--color-primary);
 		color: white;
@@ -84,8 +99,6 @@
 		flex-wrap: nowrap;
 		align-items: center;
 		height: 40px;
-		position: sticky;
-		top: 0;
 	}
 
 	.sitename {
