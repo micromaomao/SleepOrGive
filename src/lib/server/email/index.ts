@@ -2,6 +2,7 @@ import { backgroundJobsManager } from '$lib/server/background_jobs';
 import { withDBClient, type Client as DBClient } from '$lib/server/db';
 import type { SvelteComponent } from 'svelte';
 import { htmlToText } from 'html-to-text';
+import { handleJob } from './send';
 
 export enum Status {
 	Pending = 0,
@@ -9,10 +10,25 @@ export enum Status {
 	Failed = 2
 }
 
+export interface OutgoingEmail {
+	id: string;
+	user_id: string;
+	address: string;
+	subject: string;
+	content: string;
+	content_plain: string;
+	status: number;
+	retry_count: number;
+	purpose: OutgoingMailPurpose;
+	bounced_at: Date;
+	spam_reported_at: Date;
+	opened_at: Date;
+}
+
 export function emailBackgroundJob(): Promise<Date | null> {
 	return withDBClient(async (db) => {
 		await db.query('begin transaction isolation level read committed');
-		let { rows: jobs }: { rows: any[] } = await db.query({
+		let { rows: jobs }: { rows: OutgoingEmail[] } = await db.query({
 			text: `
         select * from outgoing_mails
           where status = ${Status.Pending}
@@ -55,10 +71,6 @@ export function emailBackgroundJob(): Promise<Date | null> {
 		await db.query({ text: 'commit' });
 		return ret_time;
 	});
-}
-
-async function handleJob(job: any): Promise<void> {
-	throw new Error('Not implemented');
 }
 
 export enum OutgoingMailPurpose {

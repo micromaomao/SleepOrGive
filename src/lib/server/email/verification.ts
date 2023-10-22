@@ -7,8 +7,9 @@ import EmailVerificationEmail from './EmailVerificationEmail.svelte';
 import { fetchUserBasicData } from '../user';
 import { generateToken, strToHashBuf } from '../secure_token';
 import { mustBeValidEmail, mustBeValidVerificationCode } from '$lib/validations';
-import { APP_NAME, ORIGIN } from './config';
+import { EmailConfig } from './config';
 import { randomBytes } from 'node:crypto';
+import { nowMillis } from '$lib/time';
 
 function rateLimitPerAddressAndPurpose1d(address: string, purpose: string) {
 	return new RateLimit(
@@ -18,7 +19,7 @@ function rateLimitPerAddressAndPurpose1d(address: string, purpose: string) {
 	);
 }
 function rateLimitPerAddressAndPurpose1h(address: string, purpose: string) {
-	return new RateLimit(`email:verification:peraddrandpurpose:1h${address}:${purpose}`, 3, 60 * 60);
+	return new RateLimit(`email:verification:peraddrandpurpose:1h:${address}:${purpose}`, 3, 60 * 60);
 }
 
 export async function createVerification(
@@ -45,10 +46,10 @@ export async function createVerification(
 		let subject: string;
 		switch (verification_purpose) {
 			case VerificationPurpose.Login:
-				subject = `${APP_NAME} login verification`;
+				subject = `${EmailConfig.APP_NAME} login verification`;
 				break;
 			case VerificationPurpose.SignUp:
-				subject = `Verify your email to sign up for ${APP_NAME}`;
+				subject = `Verify your email to sign up for ${EmailConfig.APP_NAME}`;
 				break;
 		}
 		let username: string | null = null;
@@ -57,22 +58,22 @@ export async function createVerification(
 			username = user_data.username;
 		}
 		let [code_ticket, hashed_code_ticket] = await generateToken();
-		let rl_response = await rateLimitPerAddressAndPurpose1d(address, verification_purpose).bump(
-			db_client
-		);
-		if (!rl_response.success) {
-			throw error(
-				429,
-				`This email has requested verification for too many times today. Please try again tomorrow or contact m@maowtm.org for help.`
-			);
-		}
-		rl_response = await rateLimitPerAddressAndPurpose1h(address, verification_purpose).bump(
+		let rl_response = await rateLimitPerAddressAndPurpose1h(address, verification_purpose).bump(
 			db_client
 		);
 		if (!rl_response.success) {
 			throw error(
 				429,
 				`This email has requested verification for too many times in one hour. Please wait another ${rl_response.reset_remaining_secs} seconds before trying again.`
+			);
+		}
+		rl_response = await rateLimitPerAddressAndPurpose1d(address, verification_purpose).bump(
+			db_client
+		);
+		if (!rl_response.success) {
+			throw error(
+				429,
+				`This email has requested verification for too many times today. Please try again tomorrow or contact sleep@maowtm.org for help.`
 			);
 		}
 		({ rows } = await db_client.query({
@@ -100,7 +101,7 @@ export async function createVerification(
 				props: {
 					purpose: verification_purpose,
 					username,
-					verificationLink: `${ORIGIN}/email-verification-code?code_ticket=${code_ticket}`
+					verificationLink: `${EmailConfig.ORIGIN}/email-verification-code?code_ticket=${code_ticket}`
 				}
 			},
 			db_client
@@ -137,11 +138,17 @@ export async function acquireCode(code_ticket: string): Promise<string> {
 	let new_code = await generateCode();
 	return await withDBClient(async (db) => {
 		let { rows }: { rows: any[] } = await db.query({
-			text: `update email_verification set code = COALESCE(code, $1) where hashed_code_ticket = $2 returning code`,
+			text: `update email_verification set code = COALESCE(code, $1) where hashed_code_ticket = $2 returning code, time`,
 			values: [new_code, hashed_code_ticket]
 		});
 		if (rows.length == 0) {
 			throw error(404, 'Invalid code ticket.');
+		}
+		if (rows[0].time.getTime() + EXPIRY_TIME < nowMillis()) {
+			throw error(404, {
+				message: 'This code has expired',
+				codeExpired: true
+			});
 		}
 		return rows[0].code;
 	});
@@ -179,7 +186,7 @@ export async function checkAndConsumesVerification(
 			ret_err = error(400, 'Incorrect verification code.');
 		} else {
 			let row = rows[0];
-			if (row.time.getTime() + EXPIRY_TIME < Date.now()) {
+			if (row.time.getTime() + EXPIRY_TIME < nowMillis()) {
 				ret_err = error(400, {
 					message: 'Verification code expired. Please get another code.',
 					requireNewCode: true

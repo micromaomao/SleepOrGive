@@ -48,3 +48,9 @@ if (browser) {
 		}
 	});
 }
+
+// TODO: do this with service worker instead
+export const emailVerificationCodeStore = useLocalStorage<'expecting' | string | null>(
+	'email_verification_code',
+	null
+);

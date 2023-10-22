@@ -6,8 +6,9 @@
 </script>
 
 <script lang="ts">
-	import EmailLayout from './EmailLayout.svelte';
-	import { APP_NAME } from './config';
+	import EmailLayout, { A_STYLE_NORMAL } from './EmailLayout.svelte';
+	import { EmailConfig } from './config';
+	const APP_NAME = EmailConfig.APP_NAME;
 
 	export let username: string;
 	export let purpose: Purpose;
@@ -34,7 +35,7 @@
 	</p>
 
 	<p>
-		<a href={verificationLink}>
+		<a href={verificationLink} style={A_STYLE_NORMAL}>
 			{verificationLink}
 		</a>
 	</p>

@@ -8,6 +8,7 @@
 		donationAmount?: string;
 		currency?: string;
 		sleepNotificationTimeOffsets: number[];
+		clientTicket: { ticket: string; email: string } | null;
 	}
 </script>
 
@@ -128,7 +129,10 @@
 			/>
 		{/if}
 		{#if stage == 'verifyemail'}
-			<VerifyEmail bind:email={signupSessionData.email} />
+			<VerifyEmail
+				bind:email={signupSessionData.email}
+				bind:clientTicket={signupSessionData.clientTicket}
+			/>
 		{/if}
 	</div>
 {/key}

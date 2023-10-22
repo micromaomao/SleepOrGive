@@ -8,6 +8,7 @@ declare global {
 		interface Error {
 			message: string;
 			requireNewCode?: boolean;
+			codeExpired?: boolean;
 		}
 		interface Locals {
 			user: AuthenticatedUserInfo;
