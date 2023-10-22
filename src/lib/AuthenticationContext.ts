@@ -28,7 +28,7 @@ export class AuthContext {
 			headers: {
 				Accept: 'application/json',
 				...(init?.headers ?? {}),
-				Authorization: this.isAuthenticated ? `Bearer ${this.bearer}` : undefined
+				...(this.isAuthenticated ? { Authorization: `Bearer ${this.bearer}` } : {})
 			}
 		}).then(async (res) => {
 			if (!res.ok) {

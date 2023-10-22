@@ -79,16 +79,17 @@ export async function usernameToId(username: string): Promise<string> {
 /**
  * @returns true if there is a conflict
  */
-export async function checkSignupInfoConflict(
-	query: { username: string } | { email: string }
+export async function checkUserInfoConflict(
+	query: { username: string } | { email: string },
+	currentUserId: string | null = null
 ): Promise<boolean> {
 	let query_text, values;
 	if ('username' in query) {
-		query_text = 'select 1 from users where lower(username) = lower($1)';
-		values = [query.username];
+		query_text = 'select 1 from users where lower(username) = lower($1) and user_id != $2';
+		values = [query.username, currentUserId];
 	} else if ('email' in query) {
-		query_text = 'select 1 from users where lower(primary_email) = lower($1)';
-		values = [query.email];
+		query_text = 'select 1 from users where lower(primary_email) = lower($1) and user_id != $2';
+		values = [query.email, currentUserId];
 	} else {
 		throw new Error('Invalid query');
 	}
