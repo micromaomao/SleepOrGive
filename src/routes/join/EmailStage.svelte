@@ -10,6 +10,25 @@
 	onMount(() => {
 		email_input.focus();
 	});
+
+	let serverValidationError: string | null = null;
+	$: email, (serverValidationError = null);
+
+	async function handleServerValidation() {
+		try {
+			let res = await fetch(`/api/v1/join/checkemail?email=${encodeURIComponent(email)}`);
+			if (!res.ok) {
+				serverValidationError = await res.text();
+			} else {
+				serverValidationError = null;
+			}
+		} catch (e) {
+			serverValidationError = `Network error occurred while checking your email - try again later.`;
+		}
+		if (serverValidationError) {
+			throw new Error(serverValidationError);
+		}
+	}
 </script>
 
 <h1>
@@ -54,7 +73,17 @@
 		bind:value={email}
 	/>
 
-	<NextPrev nextDisabled={!EMAIL.test(email)} />
+	<NextPrev
+		nextDisabled={!EMAIL.test(email)}
+		validationGate={async () => {
+			email;
+			await handleServerValidation();
+		}}
+	/>
+
+	{#if serverValidationError}
+		<div class="error">{serverValidationError}</div>
+	{/if}
 </form>
 
 <style lang="scss">

@@ -1,8 +1,5 @@
 <script lang="ts">
-	import { createEventDispatcher } from 'svelte';
 	import NextPrev from './NextPrev.svelte';
-
-	const dispatch = createEventDispatcher();
 </script>
 
 <h1>

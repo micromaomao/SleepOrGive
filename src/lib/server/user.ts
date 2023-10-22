@@ -45,13 +45,13 @@ export async function isUserPublic(user_id: string): Promise<boolean> {
 export async function fetchUserAvatarUrl(user_id: string, size: number): Promise<string> {
 	return await withDBClient(async (db) => {
 		let { rows } = await db.query({
-			text: 'select notification_email from users where user_id = $1',
+			text: 'select primary_email from users where user_id = $1',
 			values: [user_id]
 		});
 		if (rows.length == 0) {
 			throw error(404, 'User not found');
 		}
-		let email = rows[0].notification_email;
+		let email = rows[0].primary_email;
 		let email_hash = '00000000000000000000000000000000';
 		if (email) {
 			let hash = createHash('md5', { encoding: 'utf8' });
@@ -74,4 +74,26 @@ export async function usernameToId(username: string): Promise<string> {
 		throw error(404, 'User not found');
 	}
 	return rows[0].user_id;
+}
+
+/**
+ * @returns true if there is a conflict
+ */
+export async function checkSignupInfoConflict(
+	query: { username: string } | { email: string }
+): Promise<boolean> {
+	let query_text, values;
+	if ('username' in query) {
+		query_text = 'select 1 from users where lower(username) = lower($1)';
+		values = [query.username];
+	} else if ('email' in query) {
+		query_text = 'select 1 from users where lower(primary_email) = lower($1)';
+		values = [query.email];
+	} else {
+		throw new Error('Invalid query');
+	}
+	let { rows }: { rows: any[] } = await withDBClient((db) =>
+		db.query({ text: query_text, values })
+	);
+	return rows.length > 0;
 }

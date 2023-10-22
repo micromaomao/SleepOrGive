@@ -1,4 +1,5 @@
 <script lang="ts" context="module">
+	import Spinner from '$lib/components/Spinner.svelte';
 	import { getContext, setContext } from 'svelte';
 	import { writable, type Readable, type Writable } from 'svelte/store';
 	export const ContextKey = Symbol('NextPrev:ContextKey');
@@ -34,6 +35,18 @@
 	$: backStr = $context.overrideBack ?? 'Back';
 	$: onBack = $context.onBack;
 	$: onNext = $context.onNext;
+
+	export let validationGate: (() => Promise<void>) | null = null;
+	let validationCancel: AbortController | null = null;
+	let hasValidationError: boolean = false;
+	function ensureCancelValidation() {
+		if (validationCancel) {
+			validationCancel.abort();
+			validationCancel = null;
+		}
+		hasValidationError = false;
+	}
+	$: validationGate, ensureCancelValidation();
 </script>
 
 <div class="nextprev">
@@ -43,26 +56,60 @@
 			tabindex="0"
 			role="button"
 			class="back"
-			on:click={(evt) => onBack()}
+			on:click={(evt) => {
+				ensureCancelValidation();
+				onBack();
+			}}
 			on:keydown={(evt) => {
 				if (evt.key == 'Enter') {
+					ensureCancelValidation();
 					onBack();
 				}
 			}}>{backStr}</a
 		>
 	{/if}
-	<input
-		type="submit"
-		class="next primary"
-		value={nextStr}
-		disabled={nextDisabled}
-		on:click={(evt) => {
-			evt.preventDefault();
-			onNext();
-		}}
-	/>
+	{#if validationCancel === null}
+		<input
+			type="submit"
+			class="next primary"
+			value={nextStr}
+			disabled={nextDisabled}
+			on:click={async (evt) => {
+				evt.preventDefault();
+				if (validationGate) {
+					ensureCancelValidation();
+					let cancel = new AbortController();
+					validationCancel = cancel;
+					try {
+						await validationGate();
+						if (cancel.signal.aborted) {
+							return;
+						}
+					} catch (e) {
+						if (cancel.signal.aborted) {
+							return;
+						}
+						hasValidationError = true;
+					}
+					validationCancel = null;
+				}
+				if (!hasValidationError) {
+					onNext();
+				}
+			}}
+		/>
+	{:else}
+		<button class="next primary spinning" disabled>
+			<Spinner />
+			{nextStr}
+		</button>
+	{/if}
 </div>
 
 <style lang="scss">
 	@import './shared.scss';
+
+	.spinning {
+		cursor: progress;
+	}
 </style>

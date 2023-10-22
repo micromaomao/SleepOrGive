@@ -9,12 +9,37 @@
 	export let username: string = '';
 	export let profile_public: boolean = false;
 	$: username = username.replace(' ', '');
-	$: usernameValidationError = username
-		? tryValidate(mustBeValidUsername, username)
-		: profile_public
-		? 'A username is required for public profiles'
-		: null;
 	let alwaysShowPublicOption = false;
+	let usernameValidationError: string | null = null;
+	let serverValidationError: string | null = null;
+	$: {
+		serverValidationError = null;
+		if (username) {
+			usernameValidationError = tryValidate(mustBeValidUsername, username);
+		} else if (profile_public) {
+			usernameValidationError = 'A username is required for public profiles';
+		} else {
+			usernameValidationError = null;
+		}
+	}
+
+	async function handleServerValidation() {
+		try {
+			let res = await fetch(`/api/v1/join/checkusername?username=${encodeURIComponent(username)}`);
+			if (!res.ok) {
+				serverValidationError = await res.text();
+			} else {
+				serverValidationError = null;
+			}
+		} catch (e) {
+			serverValidationError =
+				'Network error occurred while checking your username - try again later.';
+		}
+
+		if (serverValidationError) {
+			throw new Error(serverValidationError);
+		}
+	}
 </script>
 
 <h1>
@@ -56,11 +81,20 @@
 		</label>
 	{/if}
 
-	<NextPrev nextDisabled={!!usernameValidationError} overrideNext={!username ? 'Skip' : null} />
+	<NextPrev
+		nextDisabled={!!usernameValidationError}
+		overrideNext={!username ? 'Skip' : null}
+		validationGate={async () => {
+			username;
+			await handleServerValidation();
+		}}
+	/>
 
 	<div class="error">
 		{#if usernameValidationError}
 			{usernameValidationError}
+		{:else if serverValidationError}
+			{serverValidationError}
 		{/if}
 	</div>
 </form>
