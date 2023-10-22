@@ -128,7 +128,7 @@
 			/>
 		{/if}
 		{#if stage == 'verifyemail'}
-			<VerifyEmail />
+			<VerifyEmail bind:email={signupSessionData.email} />
 		{/if}
 	</div>
 {/key}

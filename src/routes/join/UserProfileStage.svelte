@@ -24,10 +24,11 @@
 	}
 
 	async function handleServerValidation() {
+		if (!username) return;
 		try {
 			let res = await fetch(`/api/v1/join/checkusername?username=${encodeURIComponent(username)}`);
 			if (!res.ok) {
-				serverValidationError = await res.text();
+				serverValidationError = (await res.json()).message;
 			} else {
 				serverValidationError = null;
 			}

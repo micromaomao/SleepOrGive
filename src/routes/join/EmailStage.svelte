@@ -18,7 +18,7 @@
 		try {
 			let res = await fetch(`/api/v1/join/checkemail?email=${encodeURIComponent(email)}`);
 			if (!res.ok) {
-				serverValidationError = await res.text();
+				serverValidationError = (await res.json()).message;
 			} else {
 				serverValidationError = null;
 			}
