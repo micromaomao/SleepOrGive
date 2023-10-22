@@ -1,23 +1,28 @@
 import { error } from '@sveltejs/kit';
-import { withDBClient } from './db';
+import { withDBClient, type Client as DBClient } from './db';
 import { createHash } from 'crypto';
-import type { UserData } from '$lib/shared_types';
+import type { BasicUserData, UserData } from '$lib/shared_types';
 import { luxonNow } from '$lib/time';
 import { TimezoneContext } from '$lib/TimezoneContext';
+
+export async function fetchUserBasicData(user_id: string, db: DBClient): Promise<BasicUserData> {
+	let { rows } = await db.query({
+		text: 'select user_id, username, timezone from users where user_id = $1',
+		values: [user_id]
+	});
+	if (rows.length == 0) {
+		throw error(404, 'User not found');
+	}
+	let user = rows[0];
+	return user;
+}
 
 export async function fetchUserData(
 	user_id: string,
 	include_older_history: boolean = false
 ): Promise<UserData> {
 	return await withDBClient<UserData>(async (db) => {
-		let { rows } = await db.query({
-			text: 'select user_id, username, timezone from users where user_id = $1',
-			values: [user_id]
-		});
-		if (rows.length == 0) {
-			throw error(404, 'User not found');
-		}
-		let user = rows[0];
+		let user = await fetchUserBasicData(user_id, db);
 		let now = luxonNow(TimezoneContext.fromZoneName(user.timezone));
 		return {
 			...user,

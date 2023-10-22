@@ -25,27 +25,29 @@ create table users (
   donation_per_minute decimal default null,
   is_public boolean default null, -- null means not asked
   last_monthly_process_time timestamptz default null,
-  sleep_notification_times_offsets interval[] not null
+  sleep_notification_times_offsets interval[] not null,
+  authentication_config jsonb not null default '{}'
 );
 
 create unique index username_ignorecase on users (lower(username)) where username is not null;
 create unique index email_ignorecase on users (lower(primary_email)) where primary_email is not null;
 
 create table email_verification (
-  id text not null primary key default gen_ulid(),
+  client_ticket text not null primary key,
+  time timestamptz not null default now(),
   email text not null,
-  hashed_ticket bytea not null unique,
-  code text default null,
-  purpose text not null -- e.g. "signup", "login"
+  hashed_code_ticket bytea not null unique,
+  code text default null, -- should not be populated before link visited, to prevent brute force
+  purpose text not null, -- e.g. "signup", "login"
+  try_count int not null default 0
 );
 
 create table auth_attempts (
   id text not null primary key default gen_ulid(),
   user_id text not null references users(user_id),
-  completed_stages text[] not null default '{}',
+  state jsonb not null default '{}',
   ip_addr inet not null,
-  success_at timestamptz default null,
-  email_verification_id text default null references email_verification(id)
+  success_at timestamptz default null
 );
 
 create table sessions (
@@ -56,20 +58,6 @@ create table sessions (
   user_id text not null references users(user_id),
   granted_from text not null references auth_attempts(id)
 );
-
-create table user_auth_methods (
-  id text not null primary key default gen_ulid(),
-  user_id text not null references users(user_id),
-  primary_email_verification boolean not null default false,
-  oauth_provider text default null,
-  oauth_refresh_token bytea default null, -- encrypted
-  oauth_remote_user_id text default null,
-  two_factor_webauthn_data jsonb default null,
-  backup_codes text[] default null
-);
-
-create index on user_auth_methods (user_id);
-create unique index user_auth_methods_oauth on user_auth_methods (oauth_provider, oauth_remote_user_id) where oauth_provider is not null and oauth_remote_user_id is not null;
 
 create table user_notices (
   id text not null primary key default gen_ulid(),
@@ -112,15 +100,18 @@ create table outgoing_mails (
   id text not null primary key default gen_ulid(),
   user_id text default null references users(user_id),
   address text not null,
+  subject text not null,
   content text not null,
   content_plain text not null,
   status int not null default 0, -- 0 = pending, 1 = delivered, 2 = delivery failed
   retry_count int not null default 0,
-  purpose text not null, -- e.g. "email_verification/signup"
+  purpose text not null, -- e.g. "verification"
   bounced_at timestamptz default null,
   spam_reported_at timestamptz default null,
   opened_at timestamptz default null
 );
+
+create index pending_outgoing_mails on outgoing_mails (id) where status = 0;
 
 -- Use row-level-lock on sleep_notification and outgoing_mails during delivery
 

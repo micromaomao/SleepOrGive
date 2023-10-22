@@ -1,0 +1,67 @@
+<script lang="ts" context="module">
+	export const COLOR_PRIMARY = '#0072c6';
+	export const COLOR_PRIMARY_DARK = '#004b83';
+	export const COLOR_PRIMARY_DARKER = '#002e4f';
+	export const COLOR_GRAY = 'rgb(114, 114, 114)';
+	export const COLOR_TEXT = 'rgb(10, 10, 10)';
+	export const COLOR_LIGHT_GRAY = 'rgb(226, 226, 226)';
+	export const COLOR_BACKGROUND = 'rgb(252, 252, 252)';
+</script>
+
+<script lang="ts">
+	import { getContext } from 'svelte';
+	import { APP_NAME, ORIGIN } from './config';
+
+	const subject = getContext('subject');
+</script>
+
+{@html '<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">'}
+<html lang="en">
+	<head>
+		{@html '<meta httpEquiv="Content-Type" content="text/html; charset=UTF-8" />'}
+	</head>
+	<body
+		style={"font-family: 'Segoe UI', 'Segoe UI Web (West European)', -apple-system, BlinkMacSystemFont, Roboto, 'Helvetica Neue', sans-serif; " +
+			'font-size: 18px; ' +
+			'line-height: 1.5; ' +
+			`color: ${COLOR_TEXT}; ` +
+			`background-color: ${COLOR_BACKGROUND}; ` +
+			'padding: 10px; ' +
+			'margin: 0;'}
+	>
+		<div id="preview" style="display: none; overflow: hidden; font-size: 1px; opacity: 0;">
+			<slot name="preview" />
+		</div>
+		<table border={0} style="width: 100%;">
+			<tr style={`background-color: ${COLOR_PRIMARY}; color: ${COLOR_BACKGROUND};`}>
+				<td>
+					<a href="https://maowtm.org" target="_blank"> mw </a>
+					/
+					<a href={ORIGIN} style="font-weight: bold;">
+						{APP_NAME}
+					</a>
+				</td>
+			</tr>
+			<tr style="padding: 20px;">
+				<h1
+					style={`padding: 0; margin: 10px 0; font-size: 28px; font-weight: bold; line-height: 1.5;`}
+				>
+					{subject}
+				</h1>
+				<slot />
+			</tr>
+			<tr
+				style={`padding: 20px; background-color: ${COLOR_LIGHT_GRAY}; font-size: 12px; font-weight: 200;`}
+			>
+				<slot name="footer" />
+				<p>
+					{APP_NAME} is an independent project created by
+					<a href="mailto:m@maowtm.org">Tingmao Wang</a>. It is not affiliated with any other
+					organization, including but not limited to my employer. You data is handled in accordance
+					with the
+					<a href={`${ORIGIN}/privacy`} target="_blank">{APP_NAME} Privacy Policy</a>.
+				</p>
+			</tr>
+		</table>
+	</body>
+</html>

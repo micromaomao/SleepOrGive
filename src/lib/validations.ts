@@ -79,3 +79,9 @@ export function validateDonationAmount(amount: string) {
 }
 
 export const ALLOWED_CURRENCIES = ['GBP', 'USD', 'CNY', 'JPY'];
+
+export function mustBeValidVerificationCode(code: string) {
+	if (!/^[0-9]{6}$/.test(code)) {
+		throw error(400, 'Invalid verification code.');
+	}
+}

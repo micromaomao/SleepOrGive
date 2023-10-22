@@ -29,20 +29,16 @@ export class RateLimitBumpResponse {
 }
 
 export class RateLimit {
-	constructor(public readonly key: string, public limit: number, public reset_period: number) {
-		if (limit <= 0 || reset_period <= 0) {
+	constructor(public readonly key: string, public limit: number, public reset_period_secs: number) {
+		if (limit <= 0 || reset_period_secs <= 0) {
 			throw new Error('Invalid rate limit configuration');
 		}
 	}
-
-	/**
-	 * If `http_res` is provided, will attach RateLimit-* headers to it.
-	 */
-	public async bump(db?: DBClient, http_res?: Response): Promise<RateLimitBumpResponse> {
+	public async bump(db?: DBClient): Promise<RateLimitBumpResponse> {
 		if (!db) {
 			return await withDBClient((db) => this.bump(db));
 		}
-		let reset_period = this.reset_period;
+		let reset_period = this.reset_period_secs;
 		if (typeof reset_period != 'number') {
 			throw new Error('Assertion failed');
 		}
@@ -71,7 +67,7 @@ export class RateLimit {
 		if (remaining < 0) {
 			remaining = 0;
 		}
-		let reset = new Date(last_reset.getTime() + this.reset_period * 1000);
+		let reset = new Date(last_reset.getTime() + this.reset_period_secs * 1000);
 		let db_now: Date = rows[0].db_now; // Prevent weird clock skew issues
 		let ret: RateLimitBumpResponse = new RateLimitBumpResponse(
 			count <= this.limit,

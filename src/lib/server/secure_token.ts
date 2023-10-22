@@ -1,4 +1,4 @@
-import { randomBytes, createHash } from 'crypto';
+import { randomBytes, createHash } from 'node:crypto';
 export const TOKEN_PREFIX = 'sk_';
 export const TOKEN_LENGTH = 24;
 
