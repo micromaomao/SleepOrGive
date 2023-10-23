@@ -6,7 +6,7 @@
 </script>
 
 <script lang="ts">
-	import EmailLayout, { A_STYLE_NORMAL } from './EmailLayout.svelte';
+	import EmailLayout, { A_STYLE_BUTTON, A_STYLE_NORMAL } from './EmailLayout.svelte';
 	import { EmailConfig } from './config';
 	const APP_NAME = EmailConfig.APP_NAME;
 
@@ -16,6 +16,14 @@
 </script>
 
 <EmailLayout>
+	<svelte:fragment slot="preview">
+		{#if purpose == 'signup'}
+			Your email verification code.
+		{:else if purpose == 'login'}
+			Verification code for login.
+		{/if}
+	</svelte:fragment>
+
 	{#if username}
 		<p>
 			Hi {username},
@@ -26,7 +34,7 @@
 
 	<p>
 		{#if purpose == 'signup'}
-			Thank you for signing up to {APP_NAME}! To verify your email address, open the link below to
+			Thank you for signing up to {APP_NAME}! To verify your email address, click the link below to
 			get your verification code:
 		{:else if purpose == 'login'}
 			Someone has requested to log in to your account. If this was you, click the following link to
@@ -35,9 +43,7 @@
 	</p>
 
 	<p>
-		<a href={verificationLink} style={A_STYLE_NORMAL}>
-			{verificationLink}
-		</a>
+		<a class="button" href={verificationLink} style={A_STYLE_BUTTON}> Get code </a>
 	</p>
 
 	<p>

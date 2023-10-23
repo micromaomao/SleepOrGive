@@ -49,10 +49,10 @@
 		if (componentCancel) {
 			componentCancel.abort();
 			componentCancel = null;
-			validatingNewEmail = false;
-			sendingVerification = false;
-			sendError = null;
 		}
+		validatingNewEmail = false;
+		sendingVerification = false;
+		sendError = null;
 	}
 
 	async function sendVerificationEmail() {
@@ -171,7 +171,7 @@
 				class="primary"
 				type="submit"
 				value="Resend"
-				disabled={!EMAIL.test(newEmail)}
+				disabled={!EMAIL.test(newEmail) || newEmail === email}
 				on:click={handleChangeEmail}
 			/>
 		{:else}
@@ -211,6 +211,8 @@
 	>
 		{sendError}
 	</Alert>
+
+	<NextPrev nextDisabled={true} overrideNext="Create user" />
 {:else}
 	<p>
 		Almost there! We've sent you an email with a link to verify your email address. Please open the
@@ -218,11 +220,12 @@
 	</p>
 
 	<form on:submit={(evt) => evt.preventDefault()}>
-		<input type="text" bind:value={codeInput} bind:this={codeInputElement} />
+		<input type="text" bind:value={codeInput} bind:this={codeInputElement} placeholder="123456" />
 
 		<NextPrev
 			nextDisabled={sendingVerification || !isValidCode(codeInput)}
 			validationGate={handleSubmitCode}
+			overrideNext="Create user"
 		/>
 	</form>
 {/if}

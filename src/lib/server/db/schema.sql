@@ -105,6 +105,7 @@ create table outgoing_mails (
   content_plain text not null,
   status int not null default 0, -- 0 = pending, 1 = delivered, 2 = delivery failed
   retry_count int not null default 0,
+  pause_until timestamptz default null,
   purpose text not null, -- e.g. "verification"
   bounced_at timestamptz default null,
   spam_reported_at timestamptz default null,

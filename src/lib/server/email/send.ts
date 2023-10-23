@@ -1,7 +1,18 @@
+import { dev } from '$app/environment';
 import type { OutgoingEmail } from '.';
 import { EmailConfig } from './config';
 
 export async function handleJob(job: OutgoingEmail): Promise<void> {
+	if (dev) {
+		if (job.address.endsWith('@localhost')) {
+			throw new Error('Deliberate failure.');
+		}
+		console.log('Development mode - email sending disabled');
+		console.log(`Email ${job.id} to ${job.address}:`);
+		console.log(`Subject: ${job.subject}`);
+		console.log(`\n${job.content_plain}\n`);
+		return;
+	}
 	console.log('Sending email', job.id, job.address, job.subject);
 	let res = await fetch('https://api.postmarkapp.com/email', {
 		method: 'POST',

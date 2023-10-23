@@ -16,6 +16,21 @@
 		color: ${COLOR_PRIMARY};
 		text-decoration: none;
 	`;
+
+	export const A_STYLE_BUTTON = `
+		background-color: ${COLOR_PRIMARY};
+		text-decoration: none;
+		color: white;
+		border: none;
+		margin: 0;
+		padding: 10px 15px;
+		font-weight: 600;
+		cursor: pointer;
+		border-radius: 3px;
+		border: transparent solid 1px;
+		font-size: inherit;
+		font-family: inherit;
+	`;
 </script>
 
 <script lang="ts">
@@ -31,18 +46,32 @@
 <html lang="en" style="margin: 0; padding: 0;">
 	<head>
 		{@html '<meta httpEquiv="Content-Type" content="text/html; charset=UTF-8" />'}
+		<style>
+			a.button:hover {
+				background-color: #004b83;
+				color: white;
+			}
+
+			a.button:hover:active {
+				background-color: #002e4f;
+				color: white;
+			}
+		</style>
 	</head>
 	<body
 		style={"font-family: 'Segoe UI', 'Segoe UI Web (West European)', -apple-system, BlinkMacSystemFont, Roboto, 'Helvetica Neue', sans-serif; " +
 			'font-size: 18px; ' +
 			'line-height: 1.5; ' +
 			`color: ${COLOR_TEXT}; ` +
-			`background-color: ${COLOR_BACKGROUND}; ` +
-			'padding: 0; ' +
-			'margin: 0;'}
+			`background-color: #fff; ` +
+			'padding: 14px; ' +
+			'margin: 0 auto;' +
+			'max-width: 800px;'}
 	>
 		<div id="preview" style="display: none; overflow: hidden; font-size: 1px; opacity: 0;">
 			<slot name="preview" />
+			<br />
+			{'\xa0\u200C\u200B\u200D\u200E\u200F\uFEFF'.repeat(50)}
 		</div>
 		<div
 			style={`background-color: ${COLOR_PRIMARY}; color: ${COLOR_BACKGROUND}; width: 100%; padding: 5px 10px; margin: 0;`}

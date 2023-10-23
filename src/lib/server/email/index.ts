@@ -19,6 +19,7 @@ export interface OutgoingEmail {
 	content_plain: string;
 	status: number;
 	retry_count: number;
+	pause_until: Date | null;
 	purpose: OutgoingMailPurpose;
 	bounced_at: Date;
 	spam_reported_at: Date;
@@ -28,16 +29,31 @@ export interface OutgoingEmail {
 export function emailBackgroundJob(): Promise<Date | null> {
 	return withDBClient(async (db) => {
 		await db.query('begin transaction isolation level read committed');
+		let time_thres = new Date();
 		let { rows: jobs }: { rows: OutgoingEmail[] } = await db.query({
 			text: `
         select * from outgoing_mails
           where status = ${Status.Pending}
+						and (pause_until is null or pause_until <= $1)
           order by retry_count asc, id asc
           limit 1
           for update skip locked
-      `
+      `,
+			values: [time_thres]
 		});
 		if (jobs.length === 0) {
+			({ rows: jobs } = await db.query({
+				text: `
+					select pause_until from outgoing_mails
+						where status = ${Status.Pending}
+							and pause_until is not null
+							and pause_until > $1
+				`,
+				values: [time_thres]
+			}));
+			if (jobs.length > 0) {
+				return jobs[0].pause_until;
+			}
 			return null;
 		}
 		if (jobs.length > 1) {
@@ -45,31 +61,28 @@ export function emailBackgroundJob(): Promise<Date | null> {
 		}
 		let job = jobs[0];
 
-		let ret_time = null;
-
 		try {
 			await handleJob(job);
 			await db.query({
-				text: `update outgoing_mails set status = ${Status.Delivered} where id = $1`,
+				text: `update outgoing_mails set status = ${Status.Delivered}, pause_until = null where id = $1`,
 				values: [job.id]
 			});
 		} catch (e) {
 			console.error(`Error delivering email ${job.id}`, e);
-			if (job.retry_count > 3) {
+			if (job.retry_count >= 2) {
 				await db.query({
-					text: `update outgoing_mails set status = ${Status.Failed} where id = $1`,
+					text: `update outgoing_mails set status = ${Status.Failed}, pause_until = null where id = $1`,
 					values: [job.id]
 				});
 			} else {
 				await db.query({
-					text: `update outgoing_mails set retry_count = retry_count + 1 where id = $1`,
-					values: [job.id]
+					text: `update outgoing_mails set retry_count = retry_count + 1, pause_until = $2 where id = $1`,
+					values: [job.id, new Date(Date.now() + 1000 * 5)]
 				});
-				ret_time = new Date(Date.now() + 1000 * 5 * (job.retry_count + 1));
 			}
 		}
 		await db.query({ text: 'commit' });
-		return ret_time;
+		return new Date(); // Immediately trigger another run, in case there are more emails to send
 	});
 }
 
