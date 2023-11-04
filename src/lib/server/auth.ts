@@ -3,7 +3,9 @@ import { withDBClient, type Client as DBClient } from './db';
 import { generateToken, strToHashBuf } from './secure_token';
 import { authenticationBearer } from '$lib/validations';
 import { TimezoneContext } from '$lib/TimezoneContext';
-import type { AuthAttemptState } from '$lib/shared_types';
+import type { AuthAttemptState, UserAuthConfig } from '$lib/shared_types';
+import { checkAndConsumesVerification, createVerification } from './email/verification';
+import { Purpose } from './email/EmailVerificationEmail.svelte';
 
 export interface AuthenticatedUserInfo {
 	user_id: string;
@@ -106,44 +108,47 @@ export async function logoutSession(req_evt: RequestEvent): Promise<void> {
 
 export async function startAuthAttempt(
 	user_id: string,
+	hashed_ticket: Buffer,
 	req_evt: RequestEvent,
 	initial_state: AuthAttemptState | null,
 	db?: DBClient
-): Promise<{
-	ticket: string;
-	hashed_ticket: Buffer;
-}> {
+): Promise<void> {
 	if (!db) {
-		return await withDBClient((db) => startAuthAttempt(user_id, req_evt, db));
+		return await withDBClient((db) =>
+			startAuthAttempt(user_id, hashed_ticket, req_evt, initial_state, db)
+		);
 	}
 	if (initial_state === null) {
 		initial_state = {};
 	}
-	let [ticket, hashed_ticket] = await generateToken();
 	await db.query({
 		text: `
-			insert into auth_attempts (hashed_ticket, user_id, state, ip_addr)
-			values ($1, $2, $3, $4)`,
+			insert into auth_attempts (hashed_ticket, user_id, state, ip_addr, started_at)
+			values ($1, $2, $3, $4, now())
+			on conflict (hashed_ticket)
+				do update set user_id = $2, state = $3, ip_addr = $4, started_at = now()`,
 		values: [hashed_ticket, user_id, initial_state, req_evt.getClientAddress()]
 	});
-	return {
-		ticket,
-		hashed_ticket,
-	};
 }
 
-export async function getAuthAttemptState(hashed_ticket: Buffer, db?: DBClient): Promise<AuthAttemptState> {
+export async function getAuthAttemptState(
+	hashed_ticket: Buffer,
+	db?: DBClient
+): Promise<{
+	state: AuthAttemptState;
+	user_id: string;
+}> {
 	if (!db) {
 		return await withDBClient((db) => getAuthAttemptState(hashed_ticket, db));
 	}
 	let { rows }: { rows: any[] } = await db.query({
-		text: `select state from auth_attempts where hashed_ticket = $1`,
+		text: `select state, user_id from auth_attempts where hashed_ticket = $1`,
 		values: [hashed_ticket]
 	});
 	if (rows.length == 0) {
 		throw error(404, 'Auth attempt not found');
 	}
-	return rows[0].state;
+	return rows[0];
 }
 
 export async function updateAuthAttemptState(
@@ -153,7 +158,9 @@ export async function updateAuthAttemptState(
 	db?: DBClient
 ): Promise<void> {
 	if (!db) {
-		return await withDBClient((db) => updateAuthAttemptState(hashed_ticket, old_state, new_state, db));
+		return await withDBClient((db) =>
+			updateAuthAttemptState(hashed_ticket, old_state, new_state, db)
+		);
 	}
 	let { rows }: { rows: any[] } = await db.query({
 		text: `update auth_attempts set state = $3 where hashed_ticket = $1 and state = $2 returning 1`,
@@ -162,6 +169,99 @@ export async function updateAuthAttemptState(
 	if (rows.length == 0) {
 		throw error(500, 'Transient error - try again');
 	}
+}
+
+export async function lookupEmail(email: string, db?: DBClient): Promise<string | null> {
+	if (!db) {
+		return await withDBClient((db) => lookupEmail(email, db));
+	}
+	let { rows }: { rows: any[] } = await db.query({
+		text: `select user_id from users where primary_email = $1`,
+		values: [email]
+	});
+	if (rows.length == 0) {
+		throw error(404, 'No user with this email');
+	}
+	return rows[0].user_id;
+}
+
+export async function authStateStartEmail(
+	attempt_ticket_hash: Buffer,
+	db?: DBClient
+): Promise<AuthAttemptState> {
+	if (!db) {
+		return await withDBClient((db) => authStateStartEmail(attempt_ticket_hash, db));
+	}
+
+	let { state, user_id } = await getAuthAttemptState(attempt_ticket_hash, db);
+	let auth_info = await getUserAuthInfo(user_id, db);
+	if (!auth_info.primaryEmail) {
+		throw error(400, 'Cannot use email verification for this user');
+	}
+	if (state.email_verification_client_ticket) {
+		return;
+	}
+
+	let [ticket, _] = await generateToken();
+	await createVerification(ticket, auth_info.primaryEmail, Purpose.Login, user_id, db);
+	let new_state: AuthAttemptState = {
+		...state,
+		email_verification_client_ticket: ticket,
+		email_verification_solved: false
+	};
+	await updateAuthAttemptState(attempt_ticket_hash, state, new_state, db);
+	return new_state;
+}
+
+export async function authAttemptSolveEmail(
+	attempt_ticket_hash: Buffer,
+	code: string,
+	db?: DBClient
+): Promise<AuthAttemptState> {
+	if (!db) {
+		return await withDBClient((db) => authAttemptSolveEmail(attempt_ticket_hash, code, db));
+	}
+	let { state, user_id } = await getAuthAttemptState(attempt_ticket_hash, db);
+	let auth_info = await getUserAuthInfo(user_id, db);
+	if (!auth_info.primaryEmail) {
+		throw error(400, 'Cannot use email verification for this user');
+	}
+	let email_tiekct = state.email_verification_client_ticket;
+	if (!email_tiekct) {
+		throw error(400, 'Email verification not started');
+	}
+	try {
+		await checkAndConsumesVerification(email_tiekct, code, auth_info.primaryEmail, db);
+	} catch (e) {
+		if (e.body?.requireNewCode) {
+			await updateAuthAttemptState(attempt_ticket_hash, state, {
+				...state,
+				email_verification_client_ticket: null,
+				email_verification_solved: false
+			});
+		}
+		throw e;
+	}
+	let new_state = {
+		...state,
+		email_verification_solved: true
+	};
+	await updateAuthAttemptState(attempt_ticket_hash, state, new_state);
+	return new_state;
+}
+
+export function isAuthStateSuccessful(auth_info: AuthInfo, state: AuthAttemptState): boolean {
+	if (state.first_sign_up_auto_login) {
+		return true;
+	}
+	if (
+		auth_info.primaryEmail &&
+		state.email_verification_client_ticket &&
+		state.email_verification_solved
+	) {
+		return true;
+	}
+	return false;
 }
 
 export async function authSuccess(
@@ -178,9 +278,35 @@ export async function authSuccess(
 		values: [hashed_ticket, curr_state]
 	});
 	if (rows.length == 0) {
-		throw error(500, 'Transient error - try again');
+		throw error(409, 'Session already issued');
 	}
 	let user_id = rows[0].user_id;
 	let sess = await createSession(user_id, hashed_ticket, req_evt);
 	return sess;
+}
+
+export interface AuthInfo {
+	authConfig: UserAuthConfig;
+	primaryEmail: string | null;
+}
+
+export async function getUserAuthInfo(user_id: string, db?: DBClient): Promise<AuthInfo> {
+	if (!db) {
+		return await withDBClient((db) => getUserAuthInfo(user_id, db));
+	}
+
+	return await withDBClient(async (db) => {
+		let { rows }: { rows: any[] } = await db.query({
+			text: 'select primary_email, authentication_config from users where user_id = $1',
+			values: [user_id]
+		});
+		if (rows.length == 0) {
+			throw error(404, 'User not found');
+		}
+		let row = rows[0];
+		return {
+			authConfig: row.authentication_config,
+			primaryEmail: row.primary_email
+		};
+	});
 }

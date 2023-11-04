@@ -6,12 +6,7 @@
 	import { useAuthContext } from '$lib/AuthenticationContext';
 	const dispatch = createEventDispatcher();
 
-	let email_input: HTMLInputElement;
 	export let email: string = '';
-
-	onMount(() => {
-		email_input.focus();
-	});
 
 	let serverValidationError: string | null = null;
 	$: email, (serverValidationError = null);
@@ -76,12 +71,13 @@
 			target="_blank">Privacy Policy</a
 		>.
 	</p>
+	<!-- svelte-ignore a11y-autofocus -->
 	<input
 		type="email"
 		name="email"
 		placeholder="your-name@example.com"
-		bind:this={email_input}
 		bind:value={email}
+		autofocus
 	/>
 
 	<NextPrev

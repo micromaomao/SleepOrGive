@@ -28,7 +28,7 @@ export async function createVerification(
 	verification_purpose: VerificationPurpose,
 	user_id: string | null = null,
 	db_client: DBClient = null
-) {
+): Promise<void> {
 	if (!db_client) {
 		return await withDBClient((db) =>
 			createVerification(client_ticket, address, verification_purpose, user_id, db)

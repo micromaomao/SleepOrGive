@@ -15,6 +15,7 @@ import { checkAndConsumesVerification } from '$lib/server/email/verification';
 import { withDBClient } from '$lib/server/db';
 import { checkUserInfoConflict, createUser } from '$lib/server/user';
 import { authSuccess, startAuthAttempt } from '$lib/server/auth';
+import { generateToken } from '$lib/server/secure_token';
 
 export async function POST(evt: RequestEvent): Promise<Response> {
 	let { request } = evt;
@@ -51,8 +52,9 @@ export async function POST(evt: RequestEvent): Promise<Response> {
 
 		let user_id = await createUser(body, db);
 		let auth_state = { first_sign_up_auto_login: true };
-		let auth_ticket = await startAuthAttempt(user_id, evt, auth_state, db);
-		let session = await authSuccess(auth_ticket.hashed_ticket, auth_state, evt, db);
+		let [_, hashed_ticket] = await generateToken();
+		await startAuthAttempt(user_id, hashed_ticket, evt, auth_state, db);
+		let session = await authSuccess(hashed_ticket, auth_state, evt, db);
 
 		return {
 			userId: user_id,

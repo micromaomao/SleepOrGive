@@ -48,6 +48,7 @@ create table auth_attempts (
   user_id text not null references users(user_id) on delete cascade,
   state jsonb not null default '{}',
   ip_addr inet not null,
+  started_at timestamptz not null default now(),
   success_at timestamptz default null
 );
 

@@ -56,7 +56,7 @@ export class BackgroundJobsManager {
 		this.abortController = abort;
 		const wait = (maxWait: number) => {
 			if (abort.signal.aborted) {
-				return Promise.reject(new Error("aborted"));
+				return Promise.reject(new Error('aborted'));
 			}
 			if (this.notifyCallback !== null) {
 				throw new Error('notifyCallback already exists');
