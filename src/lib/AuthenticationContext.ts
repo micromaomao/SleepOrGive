@@ -113,6 +113,14 @@ export function refreshAuthContext() {
 	authTokenStore.update((b) => b);
 }
 
+export function storeNewToken(bearer: string, initialInfo: AuthContext = null) {
+	if (!initialInfo) {
+		initialInfo = new AuthContext(bearer);
+	}
+	authContextStore.set(initialInfo);
+	authTokenStore.set(bearer);
+}
+
 export function logout() {
 	if (!browser) {
 		throw new Error('Not available on server side');

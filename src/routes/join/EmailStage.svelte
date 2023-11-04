@@ -2,6 +2,8 @@
 	import { EMAIL } from '$lib/validations';
 	import { createEventDispatcher, onMount } from 'svelte';
 	import NextPrev from './NextPrev.svelte';
+	import Alert from '$lib/components/Alert.svelte';
+	import { useAuthContext } from '$lib/AuthenticationContext';
 	const dispatch = createEventDispatcher();
 
 	let email_input: HTMLInputElement;
@@ -29,6 +31,8 @@
 			throw new Error(serverValidationError);
 		}
 	}
+
+	const authContext = useAuthContext();
 </script>
 
 <h1>
@@ -38,10 +42,17 @@
 		class="emoji"
 	/>
 </h1>
-<p>
-	We're glad you're here and to help you sleep better! <br />Already have an account?
-	<a href="/login">Log in here</a>.
-</p>
+
+{#if $authContext.isAuthenticated}
+	<Alert intent="info">
+		It looks like you're already logged in! Are you sure you want to create another account?
+	</Alert>
+{:else}
+	<p>
+		We're glad you're here and to help you sleep better! <br />Already have an account?
+		<a href="/login">Log in here</a>.
+	</p>
+{/if}
 
 <form
 	action="#"

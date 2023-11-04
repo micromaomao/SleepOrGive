@@ -1,4 +1,7 @@
 import { error } from '@sveltejs/kit';
+import { parseTime } from './textutils';
+import type { UserSettings } from './shared_types';
+import { TimezoneContext } from './TimezoneContext';
 
 export const ULID_RE = /^[a-zA-Z0-9]{26}$/;
 export const USERNAME_RE_CHARSET = /^[a-zA-Z0-9_\-.~!^*()]*$/;
@@ -68,7 +71,7 @@ export function mustBeValidEmail(email: string) {
 	}
 }
 
-export function validateDonationAmount(amount: string) {
+export function mustBeValidDonationAmount(amount: string) {
 	if (!/^[0-9]*(\.[0-9]{1,2})?$/.test(amount) || amount.length == 0) {
 		throw error(400, 'Invalid donation amount.');
 	}
@@ -78,10 +81,75 @@ export function validateDonationAmount(amount: string) {
 	}
 }
 
+export function mustBeValidNotificationTimeOffsets(offsets: number[]) {
+	for (let offset of offsets) {
+		if (!Number.isSafeInteger(offset)) {
+			throw error(400, 'Invalid notification time offset.');
+		}
+		if (offset < -12 * 60 || offset > 12 * 60) {
+			throw error(400, 'Invalid notification time offset.');
+		}
+	}
+}
+
 export const ALLOWED_CURRENCIES = ['GBP', 'USD', 'CNY', 'JPY'];
+
+export function mustBeValidCurrency(currency: string) {
+	if (!ALLOWED_CURRENCIES.includes(currency)) {
+		throw error(400, 'Invalid currency.');
+	}
+}
 
 export function mustBeValidVerificationCode(code: string) {
 	if (!/^[0-9]{6}$/.test(code)) {
 		throw error(400, 'Invalid verification code.');
 	}
+}
+
+export function mustBeValidTimezone(timezone: string) {
+	let tzc = TimezoneContext.fromZoneName(timezone);
+	if (!tzc) {
+		throw error(400, `${timezone} is not a valid IANA timezone.`);
+	}
+}
+
+export function validateUserSettings(json: UserSettings) {
+	if (json.username && typeof json.username != 'string') {
+		throw error(400, 'Invalid username.');
+	}
+	if (json.username) {
+		mustBeValidUsername(json.username);
+	} else {
+		json.username = null;
+	}
+	if (typeof json.email != 'string') {
+		throw error(400, 'Missing email.');
+	}
+	mustBeValidEmail(json.email);
+	if (typeof json.timezone != 'string') {
+		throw error(400, 'Missing timezone.');
+	}
+	mustBeValidTimezone(json.timezone);
+	if (typeof json.profileIsPublic != 'boolean') {
+		throw error(400, 'Missing profile_public.');
+	}
+	if (typeof json.sleepTargetTime != 'string') {
+		throw error(400, 'Missing sleepTargetTime.');
+	}
+	parseTime(json.sleepTargetTime);
+	if (typeof json.donationAmount != 'string') {
+		throw error(400, 'Missing donationAmount.');
+	}
+	mustBeValidDonationAmount(json.donationAmount);
+	if (typeof json.currency != 'string') {
+		throw error(400, 'Missing currency.');
+	}
+	mustBeValidCurrency(json.currency);
+	if (
+		!Array.isArray(json.sleepNotificationTimeOffsets) ||
+		json.sleepNotificationTimeOffsets.some((x) => typeof x != 'number')
+	) {
+		throw error(400, 'Missing sleepNotificationTimeOffsets.');
+	}
+	mustBeValidNotificationTimeOffsets(json.sleepNotificationTimeOffsets);
 }

@@ -11,6 +11,6 @@ export async function GET({ locals }: RequestEvent) {
 	return json({
 		user_id: user.user_id,
 		username: user.username,
-		timezone: user.timezone
+		timezone: user.timezone.name
 	});
 }

@@ -50,7 +50,7 @@
 			{#if isHome}
 				<a href="https://maowtm.org" target="_blank">mw</a> /
 			{/if}
-			<a href="/" class="sitename-link">SleepOrGive</a>
+			<a href={isLoggedIn ? '/overview' : '/'} class="sitename-link">SleepOrGive</a>
 			{#if isHome}
 				&mdash; Start sleeping earlier today!
 			{:else if isAdminPage}

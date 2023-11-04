@@ -25,6 +25,7 @@ create table users (
   donation_per_minute decimal default null,
   is_public boolean default null, -- null means not asked
   last_monthly_process_time timestamptz default null,
+  -- Minutes, relative to sleep target time on the day. +/- 12*60, where minus is before target time.
   sleep_notification_times_offsets interval[] not null,
   authentication_config jsonb not null default '{}'
 );
@@ -44,7 +45,7 @@ create table email_verification (
 
 create table auth_attempts (
   id text not null primary key default gen_ulid(),
-  user_id text not null references users(user_id),
+  user_id text not null references users(user_id) on delete cascade,
   state jsonb not null default '{}',
   ip_addr inet not null,
   success_at timestamptz default null
@@ -55,8 +56,8 @@ create table sessions (
   hashed_bearer bytea not null primary key,
   hashed_cookie bytea default null unique nulls distinct,
   created_at timestamptz not null default now(),
-  user_id text not null references users(user_id),
-  granted_from text not null references auth_attempts(id)
+  user_id text not null references users(user_id) on delete cascade,
+  granted_from text not null unique references auth_attempts(id) on delete cascade
 );
 
 create table user_notices (

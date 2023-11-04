@@ -17,7 +17,7 @@
 	})(sleepTargetTime);
 
 	const timezoneContext = useTimezoneContext();
-	$: timezoneStr = browser ? $timezoneContext.zone.name : 'UTC';
+	$: timezoneStr = browser ? $timezoneContext.name : 'UTC';
 </script>
 
 <h1>

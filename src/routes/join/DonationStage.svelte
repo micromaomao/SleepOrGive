@@ -2,7 +2,7 @@
 	import { TimezoneContext, useTimezoneContext } from '$lib/TimezoneContext';
 	import CurrencySelect, { guessCurrency } from '$lib/components/CurrencySelect.svelte';
 	import { tryValidate } from '$lib/utils';
-	import { validateDonationAmount } from '$lib/validations';
+	import { mustBeValidDonationAmount } from '$lib/validations';
 	import { createEventDispatcher } from 'svelte';
 	import NextPrev from './NextPrev.svelte';
 	const dispatch = createEventDispatcher();
@@ -10,7 +10,7 @@
 	const timezoneContext = useTimezoneContext();
 	export let currency: string = guessCurrency($timezoneContext);
 	export let donationAmount: string = ['CNY', 'JPY'].includes(currency) ? '10.00' : '1.00';
-	$: donationAmountValidation = tryValidate(validateDonationAmount, donationAmount);
+	$: donationAmountValidation = tryValidate(mustBeValidDonationAmount, donationAmount);
 </script>
 
 <h1>

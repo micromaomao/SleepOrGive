@@ -7,8 +7,8 @@
 		sleepTargetTime?: string;
 		donationAmount?: string;
 		currency?: string;
-		sleepNotificationTimeOffsets: number[];
-		clientTicket: { ticket: string; email: string } | null;
+		sleepNotificationTimeOffsets?: number[];
+		clientTicket?: { ticket: string; email: string; mustResend: boolean } | null;
 	}
 </script>
 
@@ -26,6 +26,7 @@
 	import { browser } from '$app/environment';
 	import Notification from './Notification.svelte';
 	import { initNextPrevContext } from './NextPrev.svelte';
+	import { useAuthContext } from '$lib/AuthenticationContext';
 
 	const STAGES = ['email', 'target', 'donation', 'username', 'notification', 'verifyemail'];
 
@@ -71,6 +72,11 @@
 	}
 
 	function nextStage() {
+		if (currentStage == STAGES.length - 1) {
+			sessionStorage.removeItem('signupSessionData');
+			goto('/overview');
+			return;
+		}
 		setStage(currentStage + 1);
 	}
 
@@ -132,6 +138,7 @@
 			<VerifyEmail
 				bind:email={signupSessionData.email}
 				bind:clientTicket={signupSessionData.clientTicket}
+				{signupSessionData}
 			/>
 		{/if}
 	</div>

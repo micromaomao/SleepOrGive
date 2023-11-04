@@ -8,6 +8,9 @@
 	import Alert from '$lib/components/Alert.svelte';
 	import type { SignupSessionData } from './+page.svelte';
 	import { emailVerificationCodeStore } from '$lib/useLocalStorage';
+	import type { CreateUserAPIBody } from '../api/v1/join/create-user/types';
+	import { useTimezoneContext } from '$lib/TimezoneContext';
+	import { AuthContext, storeNewToken, useAuthContext } from '$lib/AuthenticationContext';
 
 	export let email: string;
 	let fixingEmail = false;
@@ -20,10 +23,11 @@
 	let validationError: string | null = null;
 
 	let sendError: string | null = null;
-	let mustResend: boolean = false;
 
 	let codeInput: string = '';
 	let codeInputElement: HTMLInputElement;
+
+	export let createUserError: string | null = null;
 
 	$: codeInputElement?.focus?.();
 
@@ -53,6 +57,7 @@
 		validatingNewEmail = false;
 		sendingVerification = false;
 		sendError = null;
+		createUserError = null;
 	}
 
 	async function sendVerificationEmail() {
@@ -66,7 +71,8 @@
 				if (cancel.signal.aborted) return;
 				clientTicket = {
 					ticket: token_str,
-					email
+					email,
+					mustResend: false
 				};
 				return; // Svelte will re-run this function
 			}
@@ -100,10 +106,16 @@
 
 	$: {
 		email, clientTicket;
-		if (!fixingEmail) {
+		if (!fixingEmail && (!clientTicket || !clientTicket.mustResend)) {
 			sendVerificationEmail();
 		}
 	}
+
+	onMount(() => {
+		if (clientTicket?.mustResend) {
+			clientTicket = null;
+		}
+	});
 
 	async function handleChangeEmail() {
 		cancelEverything();
@@ -141,12 +153,61 @@
 		cancelEverything();
 	});
 
+	export let signupSessionData: SignupSessionData;
+
+	const timezoneContext = useTimezoneContext();
+
 	async function handleSubmitCode() {
 		$sharedCodeStore = null;
 		cancelEverything();
 		let cancel = new AbortController();
 		componentCancel = cancel;
-		// TODO
+		let body: CreateUserAPIBody = {
+			email,
+			emailVerificationClientTicket: clientTicket.ticket,
+			emailVerificationCode: codeInput,
+			timezone: $timezoneContext.name,
+			username: signupSessionData.username,
+			profileIsPublic: signupSessionData.profile_public,
+			sleepTargetTime: signupSessionData.sleepTargetTime,
+			donationAmount: signupSessionData.donationAmount,
+			currency: signupSessionData.currency,
+			sleepNotificationTimeOffsets: signupSessionData.sleepNotificationTimeOffsets
+		};
+		try {
+			let res = await fetch(`/api/v1/join/create-user`, {
+				method: 'POST',
+				signal: cancel.signal,
+				headers: {
+					'Content-Type': 'application/json'
+				},
+				body: JSON.stringify(body)
+			});
+			if (!res.ok) {
+				let e: App.Error = await res.json();
+				createUserError = e.message;
+				if (e.requireNewCode) {
+					clientTicket.mustResend = true;
+				}
+			} else {
+				let ret = await res.json();
+				let initialInfo = new AuthContext(ret.authToken, ret.userId, body.username, body.timezone);
+				storeNewToken(ret.authToken, initialInfo);
+			}
+		} catch (e) {
+			console.error(e);
+			createUserError = `Network error occurred while creating your account - try again later.`;
+		} finally {
+			if (componentCancel === cancel) {
+				componentCancel = null;
+				sendingVerification = false;
+			}
+		}
+
+		if (createUserError) {
+			// Stop <NextPrev> from going to the next page
+			throw new Error(createUserError);
+		}
 	}
 </script>
 
@@ -223,10 +284,14 @@
 		<input type="text" bind:value={codeInput} bind:this={codeInputElement} placeholder="123456" />
 
 		<NextPrev
-			nextDisabled={sendingVerification || !isValidCode(codeInput)}
+			nextDisabled={sendingVerification || !isValidCode(codeInput) || clientTicket?.mustResend}
 			validationGate={handleSubmitCode}
 			overrideNext="Create user"
 		/>
+
+		{#if createUserError}
+			<Alert intent="error">{createUserError}</Alert>
+		{/if}
 	</form>
 {/if}
 
@@ -241,6 +306,18 @@
 			}}>Incorrect? Click here to fix</button
 		>
 	</div>
+
+	{#if clientTicket?.mustResend}
+		<div>
+			<button
+				class="link"
+				on:click={() => {
+					clientTicket = null;
+					// Svelte will re-run sendVerificationEmail
+				}}>Resend email to the same address</button
+			>
+		</div>
+	{/if}
 {/if}
 
 <style lang="scss">

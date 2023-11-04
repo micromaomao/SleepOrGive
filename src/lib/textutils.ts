@@ -38,3 +38,7 @@ export function parseTime(time: string): [number, number, number] {
 	}
 	throw error(400, 'Invalid time format.');
 }
+
+export function stringifyTime(time: [number, number, number]): string {
+	return time.map((n) => n.toString().padStart(2, '0')).join(':');
+}

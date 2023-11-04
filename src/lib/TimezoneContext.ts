@@ -6,18 +6,19 @@ import { Zone, SystemZone, IANAZone } from 'luxon';
 const CONTEXT_KEY = Symbol('timezone context key');
 
 export class TimezoneContext {
-	constructor(public readonly zone: Zone) {}
+	constructor(public readonly zone: Zone, public readonly name: string) {}
 
 	static fromZoneName(zoneName: string): TimezoneContext {
 		let z = IANAZone.create(zoneName);
 		if (!z.valid) {
 			return null;
 		}
-		return new TimezoneContext(z);
+		return new TimezoneContext(z, zoneName);
 	}
 
 	static systemZone(): TimezoneContext {
-		return new TimezoneContext(new SystemZone());
+		let sz = new SystemZone();
+		return new TimezoneContext(sz, sz.name);
 	}
 }
 

@@ -1,5 +1,6 @@
 <script lang="ts">
-	import { invalidateAll } from '$app/navigation';
+	import { goto, invalidateAll } from '$app/navigation';
+	import { useAuthContext } from '$lib/AuthenticationContext';
 	import Alert from '$lib/components/Alert.svelte';
 	import Skeleton from '$lib/components/Skeleton.svelte';
 	import UserOverview from '$lib/components/UserOverview.svelte';
@@ -7,6 +8,8 @@
 	import type { PageData } from './$types';
 
 	export let data: PageData;
+
+	const authContext = useAuthContext();
 </script>
 
 <div class="banner">
@@ -23,7 +26,11 @@
 			<span class="impact-amount">£{formatNumber(data.totalAmountDonated)}</span>
 		</p>
 		<div class="signup">
-			<a href="/join" class="button">Sign up now</a>
+			{#if !$authContext.isAuthenticated}
+				<a href="/join" class="button">Sign up now</a>
+			{:else}
+				<a href="/overview" class="button">Go to your dashboard</a>
+			{/if}
 		</div>
 	</div>
 	<div class="right">
