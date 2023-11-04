@@ -18,7 +18,8 @@ p {
 
 input[type='text'],
 input[type='email'],
-input[type='time'] {
+input[type='time'],
+:global(.verification-code-input) {
 	display: block;
 	text-align: center;
 	max-width: 500px;

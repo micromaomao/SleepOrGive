@@ -35,7 +35,9 @@
 		</div>
 	{:then data}
 		<div class="content">
-			<h1>Good evening, {data.username}</h1>
+			<h1>
+				Good evening{#if data.username}, {data.username}{/if}!
+			</h1>
 
 			<div class="btns">
 				<div>

@@ -9,6 +9,8 @@
 	// Initialize client clock skew
 	import '$lib/time';
 	import UserNotices, { showTransientAlert } from './UserNotices.svelte';
+	import JustText from '$lib/components/JustText.svelte';
+	import { goto } from '$app/navigation';
 
 	const authContext = initAuthContext();
 	const timezoneContext = newTimezoneContext();
@@ -19,16 +21,20 @@
 	$: isAdminPage = $page.data.is_admin_page ?? false;
 
 	$: isLoggedIn = $authContext.isAuthenticated;
-	$: username = $authContext.username ?? '...';
+	$: username = $authContext.username;
 
 	async function handleLogout() {
 		try {
 			await $authContext.fetch('/api/v1/logout', { method: 'POST' });
 			logout();
+			goto('/');
 		} catch (e) {
 			showTransientAlert({
 				intent: 'error',
-				message: 'Failed to log out: ' + e.message
+				component: JustText,
+				props: {
+					text: 'Failed to log out: ' + e.message
+				}
 			});
 		}
 	}
@@ -59,7 +65,7 @@
 		</span>
 		<span class="user">
 			{#if isLoggedIn}
-				<a href="/overview">{username}</a>
+				<a href="/overview">{username ?? 'Overview'}</a>
 				<a
 					on:click={handleLogout}
 					on:keydown={(e) => e.key == 'Enter' && handleLogout()}
@@ -67,7 +73,9 @@
 					tabindex="0">Logout</a
 				>
 			{:else}
-				<a href="/login">Login</a>
+				{#if $page.route.id != '/login'}
+					<a href="/login">Login</a>
+				{/if}
 				{#if $page.route.id != '/join'}
 					<a href="/join">Sign up</a>
 				{/if}

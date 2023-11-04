@@ -7,10 +7,10 @@
 	import { generateToken } from '$lib/secure_token.browser';
 	import Alert from '$lib/components/Alert.svelte';
 	import type { SignupSessionData } from './+page.svelte';
-	import { emailVerificationCodeStore } from '$lib/useLocalStorage';
 	import type { CreateUserAPIBody } from '../api/v1/join/create-user/types';
 	import { useTimezoneContext } from '$lib/TimezoneContext';
-	import { AuthContext, storeNewToken, useAuthContext } from '$lib/AuthenticationContext';
+	import { AuthContext, storeNewToken } from '$lib/AuthenticationContext';
+	import VerificationCodeInput from '$lib/components/VerificationCodeInput.svelte';
 
 	export let email: string;
 	let fixingEmail = false;
@@ -24,27 +24,11 @@
 
 	let sendError: string | null = null;
 
-	let codeInput: string = '';
-	let codeInputElement: HTMLInputElement;
-
+	let verificationCode: string = '';
 	export let createUserError: string | null = null;
-
-	$: codeInputElement?.focus?.();
 
 	function isValidCode(code: string) {
 		return /^\d{6}$/.test(code);
-	}
-
-	const sharedCodeStore = emailVerificationCodeStore;
-	onMount(() => {
-		$sharedCodeStore = 'expecting';
-	});
-	$: {
-		if (isValidCode($sharedCodeStore)) {
-			codeInput = $sharedCodeStore;
-		} else {
-			$sharedCodeStore = 'expecting';
-		}
 	}
 
 	export let clientTicket: SignupSessionData['clientTicket'] = null;
@@ -158,14 +142,13 @@
 	const timezoneContext = useTimezoneContext();
 
 	async function handleSubmitCode() {
-		$sharedCodeStore = null;
 		cancelEverything();
 		let cancel = new AbortController();
 		componentCancel = cancel;
 		let body: CreateUserAPIBody = {
 			email,
 			emailVerificationClientTicket: clientTicket.ticket,
-			emailVerificationCode: codeInput,
+			emailVerificationCode: verificationCode,
 			timezone: $timezoneContext.name,
 			username: signupSessionData.username,
 			profileIsPublic: signupSessionData.profile_public,
@@ -281,10 +264,12 @@
 	</p>
 
 	<form on:submit={(evt) => evt.preventDefault()}>
-		<input type="text" bind:value={codeInput} bind:this={codeInputElement} placeholder="123456" />
+		<VerificationCodeInput bind:value={verificationCode} />
 
 		<NextPrev
-			nextDisabled={sendingVerification || !isValidCode(codeInput) || clientTicket?.mustResend}
+			nextDisabled={sendingVerification ||
+				!isValidCode(verificationCode) ||
+				clientTicket?.mustResend}
 			validationGate={handleSubmitCode}
 			overrideNext="Create user"
 		/>

@@ -2,22 +2,15 @@
 	import { onMount } from 'svelte';
 	import type { PageData } from './$types';
 	import { browser } from '$app/environment';
-	import { emailVerificationCodeStore } from '$lib/useLocalStorage';
+	import { provideEmailVerificationCode } from '$lib/useLocalStorage';
 	import Alert from '$lib/components/Alert.svelte';
 
 	export let data: PageData;
 
 	$: code = data.code;
 
-	const verificationCodeStore = emailVerificationCodeStore;
 	let stored = false;
-
-	$: {
-		if (!stored && browser && $emailVerificationCodeStore == 'expecting') {
-			$emailVerificationCodeStore = code;
-			stored = true;
-		}
-	}
+	$: stored = provideEmailVerificationCode(code);
 </script>
 
 <div class="content">

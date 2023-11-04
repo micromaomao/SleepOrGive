@@ -1,5 +1,7 @@
 import { browser } from '$app/environment';
+import { onMount } from 'svelte';
 import { writable, type Subscriber, type Writable, get } from 'svelte/store';
+import { tryValidate } from './utils';
 
 const localStorageSubscriptions: Map<string, Set<Subscriber<unknown>>> = new Map();
 
@@ -49,8 +51,37 @@ if (browser) {
 	});
 }
 
-// TODO: do this with service worker instead
-export const emailVerificationCodeStore = useLocalStorage<'expecting' | string | null>(
+const emailVerificationCodeStore = useLocalStorage<'expecting' | string | null>(
 	'email_verification_code',
 	null
 );
+
+export function useEmailVerificationCodeAutofill(fill: (code: string) => void) {
+	if (!browser) return;
+	onMount(() => {
+		emailVerificationCodeStore.set('expecting');
+		let unsubscribe = emailVerificationCodeStore.subscribe((code) => {
+			if (/^\d{6}$/.test(code)) {
+				fill(code);
+				emailVerificationCodeStore.set('expecting');
+			}
+		});
+		return () => {
+			unsubscribe();
+			emailVerificationCodeStore.set(null);
+		};
+	});
+}
+
+export function provideEmailVerificationCode(code: string): boolean {
+	if (!browser) return false;
+	let used = false;
+	emailVerificationCodeStore.update((original_value) => {
+		if (original_value == 'expecting') {
+			used = true;
+			return code;
+		}
+		return original_value;
+	});
+	return used;
+}

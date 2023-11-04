@@ -24,7 +24,11 @@
 		<UserProfilePicture user_id={data.user_id} username={data.username} size={30} />
 	</div>
 	<MaybeLink href={isMe || isOnUserPage ? null : `/user/${encodeURIComponent(data.user_id)}`}>
-		Overview for {data.username}
+		{#if data.username}
+			Overview for {data.username}
+		{:else}
+			Overview
+		{/if}
 	</MaybeLink>
 </h2>
 

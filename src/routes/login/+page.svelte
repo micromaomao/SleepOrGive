@@ -2,10 +2,10 @@
 	import { goto } from '$app/navigation';
 	import { AuthContext, storeNewToken, useAuthContext } from '$lib/AuthenticationContext';
 	import Alert from '$lib/components/Alert.svelte';
+	import VerificationCodeInput from '$lib/components/VerificationCodeInput.svelte';
 	import { generateToken } from '$lib/secure_token.browser';
 	import { tryValidate } from '$lib/utils';
 	import { mustBeValidEmail, mustBeValidVerificationCode } from '$lib/validations';
-	import { onMount } from 'svelte';
 
 	const authContext = useAuthContext();
 
@@ -107,7 +107,14 @@
 	{/if}
 
 	<form>
-		<h1>Sign in</h1>
+		<h1>
+			Welcome back
+			<img
+				src="https://em-content.zobj.net/source/twitter/376/waving-hand_1f44b.png"
+				alt="welcome"
+				class="emoji"
+			/>
+		</h1>
 
 		<p>Sign in with email:</p>
 
@@ -133,9 +140,10 @@
 		{/if}
 
 		{#if emailSent}
+			<!-- svelte-ignore a11y-label-has-associated-control -->
 			<label class="code-input">
-        Code:
-				<input type="text" name="code" placeholder="000000" bind:value={code} />
+				Code:
+				<VerificationCodeInput bind:value={code} />
 			</label>
 
 			<input
@@ -171,7 +179,7 @@
 			margin: 10px auto;
 			font-size: 20px;
 
-			input {
+			:global(input) {
 				text-align: center;
 			}
 		}
