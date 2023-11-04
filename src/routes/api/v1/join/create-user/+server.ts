@@ -50,9 +50,9 @@ export async function POST(evt: RequestEvent): Promise<Response> {
 		);
 
 		let user_id = await createUser(body, db);
-		let authState = { first_sign_up_auto_login: true };
-		let auth_id = await startAuthAttempt(user_id, evt, authState, db);
-		let session = await authSuccess(auth_id, authState, evt, db);
+		let auth_state = { first_sign_up_auto_login: true };
+		let auth_ticket = await startAuthAttempt(user_id, evt, auth_state, db);
+		let session = await authSuccess(auth_ticket.hashed_ticket, auth_state, evt, db);
 
 		return {
 			userId: user_id,

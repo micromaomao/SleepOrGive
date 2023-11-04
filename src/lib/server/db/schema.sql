@@ -44,7 +44,7 @@ create table email_verification (
 );
 
 create table auth_attempts (
-  id text not null primary key default gen_ulid(),
+  hashed_ticket bytea not null primary key,
   user_id text not null references users(user_id) on delete cascade,
   state jsonb not null default '{}',
   ip_addr inet not null,
@@ -57,7 +57,7 @@ create table sessions (
   hashed_cookie bytea default null unique nulls distinct,
   created_at timestamptz not null default now(),
   user_id text not null references users(user_id) on delete cascade,
-  granted_from text not null unique references auth_attempts(id) on delete cascade
+  granted_from bytea not null unique references auth_attempts(hashed_ticket) on delete cascade
 );
 
 create table user_notices (

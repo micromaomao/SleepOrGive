@@ -71,7 +71,7 @@ interface CreatedSession {
 
 export async function createSession(
 	user_id: string,
-	granted_from: string,
+	granted_from: Buffer,
 	req_evt?: RequestEvent
 ): Promise<CreatedSession> {
 	let [bearer, bearerHash] = await generateToken();
@@ -109,30 +109,36 @@ export async function startAuthAttempt(
 	req_evt: RequestEvent,
 	initial_state: AuthAttemptState | null,
 	db?: DBClient
-): Promise<string> {
+): Promise<{
+	ticket: string;
+	hashed_ticket: Buffer;
+}> {
 	if (!db) {
 		return await withDBClient((db) => startAuthAttempt(user_id, req_evt, db));
 	}
 	if (initial_state === null) {
 		initial_state = {};
 	}
-	let { rows }: { rows: any[] } = await db.query({
+	let [ticket, hashed_ticket] = await generateToken();
+	await db.query({
 		text: `
-			insert into auth_attempts (user_id, state, ip_addr)
-			values ($1, $2, $3)
-			returning id`,
-		values: [user_id, initial_state, req_evt.getClientAddress()]
+			insert into auth_attempts (hashed_ticket, user_id, state, ip_addr)
+			values ($1, $2, $3, $4)`,
+		values: [hashed_ticket, user_id, initial_state, req_evt.getClientAddress()]
 	});
-	return rows[0].id;
+	return {
+		ticket,
+		hashed_ticket,
+	};
 }
 
-export async function getAuthAttemptState(id: string, db?: DBClient): Promise<AuthAttemptState> {
+export async function getAuthAttemptState(hashed_ticket: Buffer, db?: DBClient): Promise<AuthAttemptState> {
 	if (!db) {
-		return await withDBClient((db) => getAuthAttemptState(id, db));
+		return await withDBClient((db) => getAuthAttemptState(hashed_ticket, db));
 	}
 	let { rows }: { rows: any[] } = await db.query({
-		text: `select state from auth_attempts where id = $1`,
-		values: [id]
+		text: `select state from auth_attempts where hashed_ticket = $1`,
+		values: [hashed_ticket]
 	});
 	if (rows.length == 0) {
 		throw error(404, 'Auth attempt not found');
@@ -141,17 +147,17 @@ export async function getAuthAttemptState(id: string, db?: DBClient): Promise<Au
 }
 
 export async function updateAuthAttemptState(
-	id: string,
+	hashed_ticket: Buffer,
 	old_state: AuthAttemptState,
 	new_state: AuthAttemptState,
 	db?: DBClient
 ): Promise<void> {
 	if (!db) {
-		return await withDBClient((db) => updateAuthAttemptState(id, old_state, new_state, db));
+		return await withDBClient((db) => updateAuthAttemptState(hashed_ticket, old_state, new_state, db));
 	}
 	let { rows }: { rows: any[] } = await db.query({
-		text: `update auth_attempts set state = $3 where id = $1 and state = $2 returning id`,
-		values: [id, old_state, new_state]
+		text: `update auth_attempts set state = $3 where hashed_ticket = $1 and state = $2 returning 1`,
+		values: [hashed_ticket, old_state, new_state]
 	});
 	if (rows.length == 0) {
 		throw error(500, 'Transient error - try again');
@@ -159,21 +165,22 @@ export async function updateAuthAttemptState(
 }
 
 export async function authSuccess(
-	id: string,
+	hashed_ticket: Buffer,
 	curr_state: AuthAttemptState,
 	req_evt: RequestEvent | null,
 	db?: DBClient
 ): Promise<CreatedSession> {
 	if (!db) {
-		return await withDBClient((db) => authSuccess(id, curr_state, db));
+		return await withDBClient((db) => authSuccess(hashed_ticket, curr_state, db));
 	}
 	let { rows }: { rows: any[] } = await db.query({
-		text: `update auth_attempts set success_at = now() where id = $1 and state = $2 and success_at is null returning user_id`,
-		values: [id, curr_state]
+		text: `update auth_attempts set success_at = now() where hashed_ticket = $1 and state = $2 and success_at is null returning user_id`,
+		values: [hashed_ticket, curr_state]
 	});
 	if (rows.length == 0) {
 		throw error(500, 'Transient error - try again');
 	}
-	let sess = await createSession(rows[0].user_id, id, req_evt);
+	let user_id = rows[0].user_id;
+	let sess = await createSession(user_id, hashed_ticket, req_evt);
 	return sess;
 }

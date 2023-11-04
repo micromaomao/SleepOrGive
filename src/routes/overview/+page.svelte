@@ -10,7 +10,7 @@
 
 	function fetchUserData(user_id: string): Promise<UserData> {
 		return $authContext
-			.fetch(`/api/v1/user/${encodeURIComponent(user_id)}/?include_older_history=true`)
+			.fetch(`/api/v1/user/${encodeURIComponent(user_id)}?include_older_history=true`)
 			.then((r) => r.json());
 	}
 
