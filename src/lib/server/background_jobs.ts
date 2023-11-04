@@ -5,6 +5,7 @@ export class BackgroundJobsManager {
 	private notifyCallback: () => void | null = null;
 	private immediateCountdown = 0;
 	private backgroundJobs: BackgroundJobHandler[] = [];
+	private abortController: AbortController | null = null;
 
 	constructor() {}
 
@@ -29,6 +30,7 @@ export class BackgroundJobsManager {
 	}
 
 	run() {
+		this.stop();
 		this.triggerImmediate();
 		this.thread().catch((e) => {
 			console.error('Unexpected background thread error');
@@ -39,8 +41,23 @@ export class BackgroundJobsManager {
 		});
 	}
 
+	stop() {
+		if (this.abortController) {
+			this.abortController.abort();
+			this.abortController = null;
+		}
+	}
+
 	async thread() {
+		let abort = new AbortController();
+		if (this.abortController) {
+			throw new Error('abortController already exists');
+		}
+		this.abortController = abort;
 		const wait = (maxWait: number) => {
+			if (abort.signal.aborted) {
+				return Promise.reject(new Error("aborted"));
+			}
 			if (this.notifyCallback !== null) {
 				throw new Error('notifyCallback already exists');
 			}
@@ -58,6 +75,9 @@ export class BackgroundJobsManager {
 					}, maxWait);
 				}
 				resolve = () => {
+					if (abort.signal.aborted) {
+						return;
+					}
 					if (!resolved) {
 						resolved = true;
 						this.notifyCallback = null;
@@ -73,11 +93,13 @@ export class BackgroundJobsManager {
 		};
 
 		while (true) {
+			if (abort.signal.aborted) break;
 			this.nextTrigger = null;
 			let jobs = this.backgroundJobs.slice();
 			console.log(`Running the following background jobs: ${jobs.map((x) => x.name).join(', ')}`);
 			let promises = jobs.map((x) => x());
 			let rets = await Promise.allSettled(promises);
+			if (abort.signal.aborted) break;
 			let hasError = false;
 			for (let i = 0; i < jobs.length; i++) {
 				let job = jobs[i];
