@@ -5,6 +5,14 @@ import type { BasicUserData, UserData, UserSettings } from '$lib/shared_types';
 import { luxonNow } from '$lib/time';
 import { TimezoneContext } from '$lib/TimezoneContext';
 import type { CreateUserAPIBody } from '../../routes/api/v1/join/create-user/types';
+import {
+	mustBeValidCurrency,
+	mustBeValidDonationAmount,
+	mustBeValidNotificationTimeOffsets,
+	mustBeValidTimezone,
+	mustBeValidUsername
+} from '$lib/validations';
+import { parseTime, stringifyTime } from '$lib/textutils';
 
 export async function fetchUserBasicData(user_id: string, db: DBClient): Promise<BasicUserData> {
 	let { rows } = await db.query({
@@ -117,6 +125,9 @@ export async function checkUserInfoConflict(
 	return rows.length > 0;
 }
 
+/**
+ * Caller expected to validate `info`, check for conflicts etc
+ */
 export async function createUser(info: UserSettings, db: DBClient): Promise<string> {
 	let { rows }: { rows: any[] } = await db.query({
 		text: `
@@ -139,8 +150,121 @@ export async function createUser(info: UserSettings, db: DBClient): Promise<stri
 			info.currency,
 			info.donationAmount,
 			info.profileIsPublic,
-			info.sleepNotificationTimeOffsets
+			info.sleepNotificationTimeOffsets.map((x) => `${x} minute`)
 		]
 	});
 	return rows[0].user_id;
+}
+
+export async function getUserSettings(user_id: string, db?: DBClient): Promise<UserSettings> {
+	if (!db) {
+		return await withDBClient((db) => getUserSettings(user_id, db));
+	}
+	let { rows }: { rows: any[] } = await db.query({
+		text: `
+			select
+				username,
+				primary_email as email,
+				timezone,
+				target::text as "sleepTargetTime",
+				currency,
+				donation_per_minute::text as "donationAmount",
+				is_public as "profileIsPublic",
+				array(
+					select round(extract(epoch from x)/60)::int
+						from unnest(sleep_notification_times_offsets) as x
+				) as "sleepNotificationTimeOffsets"
+			from users where user_id = $1`,
+		values: [user_id]
+	});
+	if (rows.length == 0) {
+		throw error(404, 'User not found');
+	}
+	let user = rows[0];
+	return user;
+}
+
+export async function updateUserSettings(
+	user_id: string,
+	updates: Partial<UserSettings>,
+	db?: DBClient
+): Promise<void> {
+	if (!db) {
+		return await withDBClient((db) => updateUserSettings(user_id, updates, db));
+	}
+	let old_values = await getUserSettings(user_id, db);
+	let query_sets: string[] = [];
+	let values: any[] = [];
+	for (let [key, value] of Object.entries(updates)) {
+		if (key == 'username') {
+			if (value === old_values.username) {
+				continue;
+			}
+			if (value !== null) {
+				if (typeof value !== 'string') {
+					throw error(400, 'Invalid username.');
+				}
+				mustBeValidUsername(value);
+				if (await checkUserInfoConflict({ username: value }, user_id, db)) {
+					throw error(409, 'A user already exists with this username.');
+				}
+			} else {
+				value = null;
+			}
+			query_sets.push(`username = $${values.length + 1}`);
+			values.push(value);
+		} else if (key == 'email') {
+			throw error(400, 'Email cannot be changed with this endpoint.');
+		} else if (key == 'timezone') {
+			if (typeof value !== 'string') {
+				throw error(400, 'Invalid timezone.');
+			}
+			mustBeValidTimezone(value);
+			query_sets.push(`timezone = $${values.length + 1}`);
+			values.push(value);
+		} else if (key == 'sleepTargetTime') {
+			if (typeof value !== 'string') {
+				throw error(400, 'Invalid sleepTargetTime.');
+			}
+			let parsedTime = parseTime(value);
+			query_sets.push(`target = $${values.length + 1}`);
+			values.push(stringifyTime(parsedTime));
+		} else if (key == 'currency') {
+			if (typeof value !== 'string') {
+				throw error(400, 'Invalid currency.');
+			}
+			mustBeValidCurrency(value);
+			query_sets.push(`currency = $${values.length + 1}`);
+			values.push(value);
+		} else if (key == 'donationAmount') {
+			if (typeof value !== 'string') {
+				throw error(400, 'Invalid donationAmount.');
+			}
+			mustBeValidDonationAmount(value);
+			query_sets.push(`donation_per_minute = $${values.length + 1}`);
+			values.push(value);
+		} else if (key == 'profileIsPublic') {
+			if (typeof value !== 'boolean') {
+				throw error(400, 'Invalid profileIsPublic.');
+			}
+			query_sets.push(`is_public = $${values.length + 1}`);
+			values.push(value);
+		} else if (key == 'sleepNotificationTimeOffsets') {
+			if (!Array.isArray(value)) {
+				throw error(400, 'Invalid sleepNotificationTimeOffsets.');
+			}
+			mustBeValidNotificationTimeOffsets(value);
+			query_sets.push(`sleep_notification_times_offsets = $${values.length + 1}`);
+			values.push(value.map((x) => `${x} minute`));
+		} else {
+			throw error(400, `Unknown field ${key}`);
+		}
+	}
+	if (query_sets.length == 0) {
+		return;
+	}
+	await db.query({
+		text: `update users set ${query_sets.join(', ')} where user_id = $${values.length + 1}`,
+		values: [...values, user_id]
+	});
 }
