@@ -19,7 +19,7 @@
 
 	const nextPrevContext = useNextPrevContext();
 
-	const DEFAULT = [-30, -10, -5, 0, 5, 10, 30];
+	const DEFAULT = [-30, -10, -5, 0, 5, 10];
 	export let sleepNotificationTimeOffsets: number[] = DEFAULT;
 
 	export let sleepTarget: string;

@@ -8,7 +8,6 @@ const CONTEXT_KEY = Symbol('auth context key');
 const authTokenStore: Writable<string | null> | null = browser
 	? useLocalStorage('session_bearer', null)
 	: null;
-export const authContextStore: Writable<AuthContext> | null = browser ? writable(null) : null;
 
 export class AuthContext {
 	constructor(
@@ -41,6 +40,10 @@ export class AuthContext {
 	}
 }
 
+export const authContextStore: Writable<AuthContext> | null = browser
+	? writable(new AuthContext(get(authTokenStore)))
+	: null;
+
 function createInitContext(contextStore: Writable<AuthContext>) {
 	let initialContext = new AuthContext(null);
 
@@ -54,6 +57,9 @@ function createInitContext(contextStore: Writable<AuthContext>) {
 			}
 			if (bearer) {
 				initialContext = new AuthContext(bearer);
+				if (!get(contextStore)) {
+					contextStore.set(initialContext);
+				}
 			}
 			let abortController = new AbortController();
 			previousAbortController = abortController;

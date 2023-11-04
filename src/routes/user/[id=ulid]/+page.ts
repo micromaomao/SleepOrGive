@@ -14,12 +14,18 @@ export const load: PageLoad = async ({ params, fetch }) => {
 	let res = await fetch(`/api/v1/user/${user_id}?include_older_history=false`, {
 		headers
 	});
-	if (!res.ok) {
+	if (!res.ok && res.status != 403) {
 		throw error(res.status, await res.json());
 	}
-	return {
-		userData: await res.json()
-	};
+	if (res.ok) {
+		return {
+			userData: await res.json()
+		};
+	} else {
+		return {
+			userData: null,
+			status: res.status,
+			message: (await res.json()).message
+		};
+	}
 };
-
-export const ssr = false; // TODO: fix
