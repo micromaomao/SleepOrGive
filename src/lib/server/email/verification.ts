@@ -183,36 +183,39 @@ export async function checkAndConsumesVerification(
 			values: [client_ticket]
 		});
 		if (rows.length == 0) {
-			ret_err = error(400, {
+			ret_err = {
 				message: 'Incorrect verification code.',
 				requireNewCode: true
-			});
+			};
 		} else {
 			let row = rows[0];
 			if (row.time.getTime() + EXPIRY_TIME < nowMillis()) {
-				ret_err = error(400, {
+				ret_err = {
 					message: 'Verification code expired. Please get another code.',
 					requireNewCode: true
-				});
-			} else if (row.try_count >= MAX_TRIES) {
-				ret_err = error(400, {
+				};
+			} else if (row.try_count > MAX_TRIES) {
+				ret_err = {
 					message:
 						'You have entered the code incorrectly too many times. Please check your email address and get another code.',
 					requireNewCode: true
-				});
+				};
 			} else if (row.email !== expected_email) {
-				ret_err = error(400, {
+				ret_err = {
 					message: 'Email does not match verification request.',
 					requireNewCode: true
-				});
+				};
 			} else if (!row.code || row.code !== expected_code) {
 				if (row.try_count == MAX_TRIES - 1) {
-					ret_err = error(
-						400,
-						'Incorrect verification code. You have one last chance to enter the code correctly.'
-					);
+					ret_err = 'Incorrect verification code. You have one last chance to enter the code correctly.';
+				} else if (row.try_count == MAX_TRIES) {
+					ret_err = {
+						message:
+							'You have entered the code incorrectly too many times. Please check your email address and get another code.',
+						requireNewCode: true
+					};
 				} else {
-					ret_err = error(400, 'Incorrect verification code.');
+					ret_err = 'Incorrect verification code.';
 				}
 			} else {
 				await db_client.query({
@@ -228,6 +231,6 @@ export async function checkAndConsumesVerification(
 		});
 	}
 	if (ret_err) {
-		throw ret_err;
+		throw error(400, ret_err);
 	}
 }
