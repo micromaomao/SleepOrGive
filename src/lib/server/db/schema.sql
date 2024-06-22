@@ -98,6 +98,14 @@ create table sleep_notifications (
   retry_count int not null default 0
 );
 
+-- Used as both a way to schedule future re-adding of scheduled notifications, and as a lock to prevent multiple
+-- concurrent attempts. (row level lock taken when processing)
+create table sleep_notification_resync (
+  user_id text not null references users(user_id),
+  scheduled_time timestamptz not null,
+  primary key (user_id, scheduled_time)
+);
+
 create table outgoing_mails (
   id text not null primary key default gen_ulid(),
   user_id text default null references users(user_id),

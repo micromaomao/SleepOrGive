@@ -31,3 +31,8 @@ export interface AuthAttemptState {
 
 	first_sign_up_auto_login?: boolean;
 }
+
+export interface SiteStats {
+	nbUsers: number;
+	totalAmountDonated: number;
+}

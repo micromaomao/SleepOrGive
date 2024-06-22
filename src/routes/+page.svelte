@@ -45,7 +45,7 @@
 
 <div class="content">
 	<p>See how it works:</p>
-	{#await data.streamed.homeData}
+	{#await data.homeData}
 		<Skeleton />
 	{:then homeData}
 		<UserOverview data={homeData} />
