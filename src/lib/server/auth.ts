@@ -103,7 +103,7 @@ export async function logoutSession(req_evt: RequestEvent): Promise<void> {
 			values: [hashedToken]
 		})
 	);
-	req_evt.cookies.delete('session');
+	req_evt.cookies.delete('session', { path: '/' });
 }
 
 export async function startAuthAttempt(
