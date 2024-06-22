@@ -10,12 +10,17 @@
 
 	let serverValidationError: string | null = null;
 	$: email, (serverValidationError = null);
+	let isEmailExist = false;
 
 	async function handleServerValidation() {
+		isEmailExist = false;
 		try {
 			let res = await fetch(`/api/v1/join/checkemail?email=${encodeURIComponent(email)}`);
 			if (!res.ok) {
 				serverValidationError = (await res.json()).message;
+				if (res.status === 409) {
+					isEmailExist = true;
+				}
 			} else {
 				serverValidationError = null;
 			}
@@ -89,7 +94,21 @@
 	/>
 
 	{#if serverValidationError}
+		{#if isEmailExist}
+		<div class="error">
+			A user already exist with this email. <br>
+			<a
+				href="/login"
+				on:click={() => {
+					dispatch('login');
+				}}
+			>
+				Log in instead
+			</a>
+		</div>
+		{:else}
 		<div class="error">{serverValidationError}</div>
+		{/if}
 	{/if}
 </form>
 

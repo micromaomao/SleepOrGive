@@ -6,11 +6,21 @@
 	import { generateToken } from '$lib/secure_token.browser';
 	import { tryValidate } from '$lib/utils';
 	import { mustBeValidEmail, mustBeValidVerificationCode } from '$lib/validations';
+	import { onMount } from 'svelte';
+	import type { SignupSessionData } from '../join/+page.svelte';
 
 	const authContext = useAuthContext();
 
 	let email: string;
 	$: emailValid = !tryValidate(mustBeValidEmail, email);
+
+	onMount(() => {
+		// Populate email from sign-up page
+		let data: SignupSessionData | null = JSON.parse(sessionStorage.getItem('signupSessionData') ?? 'null');
+		if (data && data.email) {
+			email = data.email;
+		}
+	});
 
 	let submitting = false;
 	let error: string | null = null;
