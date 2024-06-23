@@ -16,6 +16,8 @@
 	const timezoneContext = newTimezoneContext(TimezoneContext.fromZoneName(data.timezone));
 
 	import { page } from '$app/stores';
+	import { luxonDateFromStr } from '$lib/time';
+	import SleepRecordRow from './SleepRecordRow.svelte';
 	$: isOnUserPage = $page.url.pathname == `/user/${encodeURIComponent(data.user_id)}`;
 </script>
 
@@ -43,7 +45,7 @@
 	</div>
 	<div class="stat">
 		<span class="number">{data.totalDaysRecorded}</span>
-		<span class="label">days recorded</span>
+		<span class="label">days tracked</span>
 	</div>
 </div>
 
@@ -52,7 +54,11 @@
 	{sleepData.currentYear}
 </h3>
 
-<p>TODO</p>
+<ul>
+	{#each sleepData.records as record (record.date)}
+		<SleepRecordRow row={record} />
+	{/each}
+</ul>
 
 {#if historyData}
 	<h3>Earlier</h3>
@@ -93,5 +99,11 @@
 	.number {
 		font-size: 30px;
 		font-weight: 900;
+	}
+
+	ul {
+		list-style-type: none;
+		margin: 0;
+		padding: 0;
 	}
 </style>

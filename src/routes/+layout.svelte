@@ -73,7 +73,7 @@
 	<meta property="og:site_name" content="SleepOrGive" />
 </svelte:head>
 
-<div class="container" class:sleeping={$sleepingLayout}>
+<div class="container">
 	<nav>
 		<span class="sitename">
 			{#if isHome}
@@ -119,28 +119,24 @@
 
 <style>
 	:global(body) {
-		transition:
-			background-color 0.5s,
-			color 0.5s;
+		transition: background-color 0.5s;
 	}
 
 	:global(body.sleeping) {
 		background-color: #333333;
-		color: #eeeeee;
 		height: 100vh;
 		display: flex;
 		flex-direction: column;
+	}
+
+	:global(body.sleeping .content) {
+		color: #eeeeee;
 	}
 
 	.container {
 		position: sticky;
 		top: 0;
 		height: auto;
-	}
-
-	.container.sleeping {
-		background-color: #333333;
-		color: #eeeeee;
 	}
 
 	nav {

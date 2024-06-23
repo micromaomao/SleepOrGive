@@ -13,19 +13,32 @@ export async function fetchSleepRecord(user_id: string, from_date: string, to_da
     return await withDBClient(db => fetchSleepRecord(user_id, from_date, to_date, db));
   }
   let { rows } = await db.query({
-    text: `SELECT
+    text: `select
                date::text,
                timezone,
                target::text,
                floor(extract(epoch from target_utc)*1000)::double precision as "targetMillis",
                floor(extract(epoch from actual_sleep_time)*1000)::double precision as "actualSleepTimeMillis"
-             FROM sleep_records
-             WHERE user_id = $1
-               AND date >= $2
-               AND date <= $3`,
+             from sleep_records
+             where user_id = $1 and date >= $2 and date <= $3
+             order by date desc`,
     values: [user_id, from_date, to_date]
   });
   return rows as SleepRecord[];
+}
+
+export async function userLastRecordDate(user_id: string, db?: DBClient): Promise<string | null> {
+  if (!db) {
+    return await withDBClient(db => userLastRecordDate(user_id, db));
+  }
+  let { rows }: { rows: any[] } = await db.query({
+    text: `select date::text as d from sleep_records where user_id = $1 order by date desc limit 1`,
+    values: [user_id]
+  });
+  if (rows.length == 0) {
+    return null;
+  }
+  return rows[0].d;
 }
 
 export async function userTotalDaysRecorded(user_id: string, db?: DBClient): Promise<number> {

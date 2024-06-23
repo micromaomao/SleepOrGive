@@ -7,9 +7,9 @@
 	import { DateTime, type Duration } from 'luxon';
 	import { onMount } from 'svelte';
 	import SubBuuttonLinks from './SubBuuttonLinks.svelte';
-	import Alert from '$lib/components/Alert.svelte';
 	import { useAuthContext } from '$lib/AuthenticationContext';
 	import { sleepingLayout } from '../layoutContext';
+	import SubmissionError from './SubmissionError.svelte';
 
 	export let data: UserData;
   export let reload: () => void;
@@ -58,8 +58,9 @@
 	let currentDayRecord: SleepRecord;
 	let timeSinceRecord: Duration | null;
 	let timeDiff: Duration | null;
+	$: sleeping = timeSinceRecord && timeSinceRecord.as('hours') < 5;
 
-	$: $sleepingLayout = !!currentDayRecord;
+	$: $sleepingLayout = !!sleeping;
 
 	$: {
 		if (now) {
@@ -94,20 +95,21 @@
 		}, 1000);
 		return () => {
 			$sleepingLayout = false;
+			clearInterval(interval);
 		};
 	});
 </script>
 
-<div class="content" class:sleeping={!!currentDayRecord}>
+<div class="content" class:sleeping={sleeping}>
 	{#if !currentDayRecord}
-		{#if now > currentTargetTime.minus({ hours: 8 })}
+		{#if now > currentTargetTime.minus({ hours: 5 })}
 			<h1>
 				Good evening{#if data.username}, {data.username}{/if}!
 			</h1>
 			<p class="status" class:danger={now > currentTargetTime.plus({ minutes: 1 })}>
 				{#if currentTargetTime > now}
 					Ready for a good night's sleep? Your sleep target is {currentTargetTime.toLocaleString(
-						DateTime.TIME_SIMPLE
+						DateTime.TIME_24_SIMPLE
 					)}.
 				{:else if now <= currentTargetTime.plus({ minutes: 1 })}
 					You've came just in time - ready for a good night's sleep?
@@ -149,15 +151,10 @@
 				</div>
 				<SubBuuttonLinks {handleRecordDonation} />
 			</div>
-			{#if submissionError}
-				<Alert intent="error" hasRetry={false}>
-					Error submitting sleep record: {submissionError.message}<br />
-					Please try again.
-				</Alert>
-			{/if}
+			<SubmissionError {submissionError} />
 		{:else}
 			<h1>
-				Hi{#if data.username}, {data.username}{/if}! Remember to come back tonight to record your
+				Hi{#if data.username}, {data.username}{/if}! Remember to come back tonight to track your
 				sleep.
 			</h1>
 
@@ -166,8 +163,8 @@
 			</div>
 		{/if}
 		<UserOverview {data} />
-	{:else if timeSinceRecord.as('hours') < 5}
-		<h1>Hi again 👀</h1>
+	{:else if sleeping}
+		<h1>Having a sweet dream? 👀</h1>
     <h1 style="margin-top: 14px;">{now.toLocaleString(DateTime.TIME_24_WITH_SECONDS)}</h1>
 		<p>You're supposed to be asleep {Math.floor(timeSinceRecord.as('minutes'))} mins ago. Please go to bed now.</p>
 		<div class="btns">
@@ -188,6 +185,16 @@
 				</button>
 			</div>
 		</div>
+		<SubmissionError {submissionError} />
+	{:else}
+		<h1>Good morning{#if data.username}, {data.username}{/if}!</h1>
+		<p>
+			Come back later tonight when you're ready to sleep!
+		</p>
+		<div class="btns">
+			<SubBuuttonLinks {handleRecordDonation} />
+		</div>
+		<UserOverview {data} />
 	{/if}
 </div>
 

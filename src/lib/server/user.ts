@@ -2,9 +2,8 @@ import { error } from '@sveltejs/kit';
 import { withDBClient, type Client as DBClient } from './db';
 import { createHash } from 'crypto';
 import type { BasicUserData, UserData, UserSettings } from '$lib/shared_types';
-import { luxonNow } from '$lib/time';
+import { getTargetForToday, luxonDateFromStr, luxonNow } from '$lib/time';
 import { TimezoneContext } from '$lib/TimezoneContext';
-import type { CreateUserAPIBody } from '../../routes/api/v1/join/create-user/types';
 import {
 	mustBeValidCurrency,
 	mustBeValidDonationAmount,
@@ -13,7 +12,7 @@ import {
 	mustBeValidUsername
 } from '$lib/validations';
 import { parseTime, stringifyTime } from '$lib/textutils';
-import { fetchSleepRecord, userTotalDaysRecorded } from './sleep_record';
+import { fetchSleepRecord, userLastRecordDate, userTotalDaysRecorded } from './sleep_record';
 
 export async function fetchUserBasicData(user_id: string, db: DBClient): Promise<BasicUserData> {
 	let { rows } = await db.query({
@@ -33,15 +32,22 @@ export async function fetchUserData(
 ): Promise<UserData> {
 	return await withDBClient<UserData>(async (db) => {
 		let user = await fetchUserBasicData(user_id, db);
-		let now = luxonNow(TimezoneContext.fromZoneName(user.timezone));
-		let currentMonthRecords = await fetchSleepRecord(user_id, now.startOf('month').toISODate(), now.endOf('month').toISODate(), db);
+		let tz = TimezoneContext.fromZoneName(user.timezone);
+		let user_last_rec_date_str = await userLastRecordDate(user_id, db);
+		let last_record_date;
+		if (user_last_rec_date_str) {
+			last_record_date = luxonDateFromStr(user_last_rec_date_str, tz);
+		} else {
+			last_record_date = luxonNow(tz).startOf("day").minus({ days: 1 });
+		}
+		let currentMonthRecords = await fetchSleepRecord(user_id, last_record_date.startOf('month').toISODate(), last_record_date.endOf('month').toISODate(), db);
 		let totalDays = await userTotalDaysRecorded(user_id, db);
 		return {
 			...user,
 			totalDaysRecorded: totalDays,
 			sleep_data: {
-				currentYear: now.year,
-				currentMonth: now.month,
+				currentYear: last_record_date.year,
+				currentMonth: last_record_date.month,
 				records: currentMonthRecords,
 			}
 		};

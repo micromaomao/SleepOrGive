@@ -75,6 +75,13 @@
 	import type { SvelteComponent } from 'svelte';
 </script>
 
+<div>
+	<div class="alpha-banner">
+		<b class="alpha">ALPHA</b>
+		Thanks for checking this out! This is a work in progress and most features does not work yet.
+	</div>
+</div>
+
 {#each $allNotices as notice (notice)}
 	<div
 		animate:flip={{ duration: 200, easing: cubicInOut }}
@@ -93,3 +100,21 @@
 		</Alert>
 	</div>
 {/each}
+
+<style>
+	.alpha-banner {
+		background-color: #d8efff;
+		padding: 10px 15px;
+		display: flex;
+		flex-direction: row;
+		align-items: baseline;
+	}
+
+	.alpha {
+		margin: 0 15px 0 0;
+		display: inline-block;
+		padding: 2px 5px;
+		background-color: var(--color-primary);
+		color: white;
+	}
+</style>
