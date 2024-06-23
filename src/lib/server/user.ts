@@ -13,10 +13,11 @@ import {
 	mustBeValidUsername
 } from '$lib/validations';
 import { parseTime, stringifyTime } from '$lib/textutils';
+import { fetchSleepRecord, userTotalDaysRecorded } from './sleep_record';
 
 export async function fetchUserBasicData(user_id: string, db: DBClient): Promise<BasicUserData> {
 	let { rows } = await db.query({
-		text: 'select user_id, username, timezone from users where user_id = $1',
+		text: 'select user_id, username, timezone, target as sleep_target from users where user_id = $1',
 		values: [user_id]
 	});
 	if (rows.length == 0) {
@@ -33,11 +34,15 @@ export async function fetchUserData(
 	return await withDBClient<UserData>(async (db) => {
 		let user = await fetchUserBasicData(user_id, db);
 		let now = luxonNow(TimezoneContext.fromZoneName(user.timezone));
+		let currentMonthRecords = await fetchSleepRecord(user_id, now.startOf('month').toISODate(), now.endOf('month').toISODate(), db);
+		let totalDays = await userTotalDaysRecorded(user_id, db);
 		return {
 			...user,
+			totalDaysRecorded: totalDays,
 			sleep_data: {
 				currentYear: now.year,
-				currentMonth: now.month
+				currentMonth: now.month,
+				records: currentMonthRecords,
 			}
 		};
 	});

@@ -3,8 +3,9 @@
 	import { useAuthContext } from '$lib/AuthenticationContext';
 	import Alert from '$lib/components/Alert.svelte';
 	import Skeleton from '$lib/components/Skeleton.svelte';
-	import UserOverview from '$lib/components/UserOverview.svelte';
 	import type { UserData } from '$lib/shared_types';
+	import { onMount } from 'svelte';
+	import PageContentWithData from './PageContentWithData.svelte';
 
 	let authContext = useAuthContext();
 
@@ -19,7 +20,23 @@
 		? fetchUserData($authContext.user_id)
 		: new Promise(() => {});
 
-	function handleRecordDonation() {}
+	function reloadData() {
+		if ($authContext.user_id) {
+			userDataPromise = fetchUserData($authContext.user_id);
+		}
+	}
+
+	onMount(() => {
+		const interval = setInterval(() => {
+			if (window.document.visibilityState == "hidden") {
+				return;
+			}
+			fetchUserData($authContext.user_id).then((data) => {
+				userDataPromise = Promise.resolve(data);
+			});
+		}, 60000);
+		return () => clearInterval(interval);
+	});
 </script>
 
 {#if !$authContext.isAuthenticated}
@@ -34,31 +51,7 @@
 			<Skeleton />
 		</div>
 	{:then data}
-		<div class="content">
-			<h1>
-				Good evening{#if data.username}, {data.username}{/if}!
-			</h1>
-
-			<div class="btns">
-				<div>
-					<button class:danger={false}>
-						Sleep now <br />
-						<span class="sleepnow-minutes-left">30 minutes left</span>
-					</button>
-				</div>
-				<div>
-					<a
-						on:click={handleRecordDonation}
-						on:keydown={(e) => e.key == 'Enter' && handleRecordDonation()}
-						role="link"
-						tabindex="0">Record donation</a
-					>
-					<a href="/settings">User settings</a>
-				</div>
-			</div>
-
-			<UserOverview {data} />
-		</div>
+		<PageContentWithData {data} reload={reloadData} />
 	{:catch e}
 		<div class="content">
 			<Alert hasRetry on:retry={() => (userDataPromise = fetchUserData($authContext.user_id))}>
@@ -67,27 +60,3 @@
 		</div>
 	{/await}
 {/if}
-
-<style lang="scss">
-	.btns {
-		margin: 12px 0;
-		display: flex;
-		flex-direction: column;
-		align-items: center;
-		gap: 10px;
-	}
-
-	.btns > div {
-		display: flex;
-		flex-direction: row;
-		justify-content: center;
-		align-items: flex-end;
-		gap: 15px;
-	}
-
-	.sleepnow-minutes-left {
-		font-size: 70%;
-		line-height: 1;
-		font-weight: 600;
-	}
-</style>

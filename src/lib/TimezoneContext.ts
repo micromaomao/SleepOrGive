@@ -10,7 +10,7 @@ export class TimezoneContext {
 
 	static fromZoneName(zoneName: string): TimezoneContext {
 		let z = IANAZone.create(zoneName);
-		if (!z.valid) {
+		if (!z.isValid) {
 			return null;
 		}
 		return new TimezoneContext(z, zoneName);

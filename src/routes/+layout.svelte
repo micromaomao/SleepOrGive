@@ -12,6 +12,18 @@
 	import JustText from '$lib/components/JustText.svelte';
 	import { goto } from '$app/navigation';
 	import TimezoneDifferentWarning from '$lib/components/TimezoneDifferentWarning.svelte';
+	import { sleepingLayout } from './layoutContext';
+	import { browser } from '$app/environment';
+
+	$: {
+		if (browser) {
+			if ($sleepingLayout) {
+				document.body.classList.add('sleeping');
+			} else {
+				document.body.classList.remove('sleeping');
+			}
+		}
+	}
 
 	const authContext = initAuthContext();
 	const timezoneContext = newTimezoneContext();
@@ -61,7 +73,7 @@
 	<meta property="og:site_name" content="SleepOrGive" />
 </svelte:head>
 
-<div class="container">
+<div class="container" class:sleeping={$sleepingLayout}>
 	<nav>
 		<span class="sitename">
 			{#if isHome}
@@ -106,10 +118,29 @@
 <slot />
 
 <style>
+	:global(body) {
+		transition:
+			background-color 0.5s,
+			color 0.5s;
+	}
+
+	:global(body.sleeping) {
+		background-color: #333333;
+		color: #eeeeee;
+		height: 100vh;
+		display: flex;
+		flex-direction: column;
+	}
+
 	.container {
 		position: sticky;
 		top: 0;
 		height: auto;
+	}
+
+	.container.sleeping {
+		background-color: #333333;
+		color: #eeeeee;
 	}
 
 	nav {

@@ -42,7 +42,7 @@
 		<span class="label">total donated</span>
 	</div>
 	<div class="stat">
-		<span class="number">0</span>
+		<span class="number">{data.totalDaysRecorded}</span>
 		<span class="label">days recorded</span>
 	</div>
 </div>

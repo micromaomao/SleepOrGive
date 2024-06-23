@@ -2,6 +2,8 @@ import { error } from '@sveltejs/kit';
 import { parseTime } from './textutils';
 import type { UserSettings } from './shared_types';
 import { TimezoneContext } from './TimezoneContext';
+import { luxonDateFromStr } from './time';
+import type { DateTime } from 'luxon';
 
 export const ULID_RE = /^[a-zA-Z0-9]{26}$/;
 export const USERNAME_RE_CHARSET = /^[a-zA-Z0-9_\-.~!^*()]*$/;
@@ -111,6 +113,17 @@ export function mustBeValidTimezone(timezone: string) {
 	if (!tzc) {
 		throw error(400, `${timezone} is not a valid IANA timezone.`);
 	}
+}
+
+export function parseDate(date: string, zone: TimezoneContext = TimezoneContext.fromZoneName("UTC")): DateTime {
+	if (!/^[0-9]{4}-[0-9]{2}-[0-9]{2}$/.test(date)) {
+		throw error(400, 'Invalid date string.');
+	}
+	let d = luxonDateFromStr(date, zone);
+	if (!d.isValid) {
+		throw error(400, `Invalid date: ${d.invalidReason}`);
+	}
+	return d;
 }
 
 export function validateUserSettings(json: UserSettings) {

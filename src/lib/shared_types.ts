@@ -2,11 +2,14 @@ export interface BasicUserData {
 	username: string | null;
 	user_id: string;
 	timezone: string;
+	sleep_target: string;
 }
 export interface UserData extends BasicUserData {
+	totalDaysRecorded: number;
 	sleep_data: {
 		currentMonth: number;
 		currentYear: number;
+		records: SleepRecord[];
 	};
 }
 
@@ -35,4 +38,12 @@ export interface AuthAttemptState {
 export interface SiteStats {
 	nbUsers: number;
 	totalAmountDonated: number;
+}
+
+export interface SleepRecord {
+	date: string;
+	timezone: string;
+	target: string;
+	targetMillis: number;
+	actualSleepTimeMillis: number;
 }
