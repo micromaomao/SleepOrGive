@@ -8,7 +8,9 @@
 		props: P;
 	}
 
-	export interface TransientAlert<P extends object> extends NoticeContent<P> {}
+	export interface TransientAlert<P extends object> extends NoticeContent<P> {
+		key?: string;
+	}
 	export interface ExplicitDismissAlert<P extends object> extends NoticeContent<P> {
 		dismiss_key: string;
 	}
@@ -21,6 +23,11 @@
 	const localDismissStore = useLocalStorage<string[]>('localDismissedNotices', []);
 
 	export function showTransientAlert<P extends object>(alert: TransientAlert<P>) {
+		if (alert.key !== undefined && alert.key !== null) {
+			allNotices.update((notices) =>
+				notices.filter((n) => n.type != 'transient' || n.key !== alert.key)
+			);
+		}
 		allNotices.update((notices) => [...notices, { type: 'transient', ...alert }]);
 	}
 

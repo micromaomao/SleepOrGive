@@ -1,4 +1,4 @@
-import { browser } from '$app/environment';
+import { browser, dev } from '$app/environment';
 import type { Readable, Subscriber, Unsubscriber } from 'svelte/store';
 import { AuthContext, authContextStore } from './AuthenticationContext';
 import { maybeShowLocalPersistentAlert, showTransientAlert } from '../routes/UserNotices.svelte';
@@ -53,7 +53,7 @@ class SWContext implements Readable<SWContext> {
 		}
 
 		try {
-			// This will not work in development on Firefox!
+			// This will not work in development on Firefox (but will in production)!
 			// https://kit.svelte.dev/docs/service-workers#during-development
 			this.swRegistration = await navigator.serviceWorker.register('/service-worker.js', {
 				type: 'module'
@@ -136,12 +136,16 @@ if (browser) {
 					}
 				},
 				(err) => {
+					let text = 'Sleep reminders will not work on this browser as we could not set up push notification (ServiceWorker registration failed).';
+					if (dev) {
+						text = `ServiceWorker registration failed: ${err}\nNote that Firefox does not support ES module service workers and therefore this is expected to not work in dev on Firefox.`;
+					}
 					maybeShowLocalPersistentAlert({
 						dismiss_key: 'push_not_supported',
 						intent: 'error',
 						component: JustText,
 						props: {
-							text: `Sleep reminders will not work on this browser as we could not set up push notification (ServiceWorker registration failed).`
+							text
 						}
 					});
 					throw err;

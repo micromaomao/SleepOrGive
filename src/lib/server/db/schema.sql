@@ -90,6 +90,7 @@ create table push_notification_subscriptions (
   failure_count bigint not null default 0
 );
 
+-- Use row-level-lock during delivery
 create table sleep_notifications (
   id text not null primary key default gen_ulid(),
   scheduled_time timestamptz not null,
@@ -103,9 +104,10 @@ create table sleep_notifications (
 create table sleep_notification_resync (
   user_id text not null references users(user_id),
   scheduled_time timestamptz not null,
-  primary key (user_id, scheduled_time)
+  primary key (user_id)
 );
 
+-- Use row-level-lock during delivery
 create table outgoing_mails (
   id text not null primary key default gen_ulid(),
   user_id text default null references users(user_id),
@@ -123,8 +125,6 @@ create table outgoing_mails (
 );
 
 create index pending_outgoing_mails on outgoing_mails (id) where status = 0;
-
--- Use row-level-lock on sleep_notification and outgoing_mails during delivery
 
 create index email_suppressed_address_due_to_bounce on outgoing_mails (address, bounced_at) where bounced_at is not null;
 create index email_suppressed_address_due_to_spam_report on outgoing_mails (address, spam_reported_at) where spam_reported_at is not null;

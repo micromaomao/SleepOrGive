@@ -11,6 +11,7 @@
 	import UserNotices, { showTransientAlert } from './UserNotices.svelte';
 	import JustText from '$lib/components/JustText.svelte';
 	import { goto } from '$app/navigation';
+	import TimezoneDifferentWarning from '$lib/components/TimezoneDifferentWarning.svelte';
 
 	const authContext = initAuthContext();
 	const timezoneContext = newTimezoneContext();
@@ -41,6 +42,16 @@
 
 	$: if ($authContext.timezone) {
 		$timezoneContext = TimezoneContext.fromZoneName($authContext.timezone);
+		if ($timezoneContext.name != TimezoneContext.systemZone().name) {
+			showTransientAlert({
+				intent: 'info',
+				component: TimezoneDifferentWarning,
+				key: 'timezone_different_from_system',
+				props: {
+					userTimezone: $timezoneContext.name
+				}
+			});
+		}
 	}
 </script>
 
@@ -66,6 +77,8 @@
 		<span class="user">
 			{#if isLoggedIn}
 				<a href="/overview">{username ?? 'Overview'}</a>
+				<!-- svelte-ignore a11y-missing-attribute -->
+				<!-- svelte-ignore a11y-no-redundant-roles -->
 				<a
 					on:click={handleLogout}
 					on:keydown={(e) => e.key == 'Enter' && handleLogout()}
