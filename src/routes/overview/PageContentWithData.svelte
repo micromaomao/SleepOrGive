@@ -10,6 +10,7 @@
 	import { useAuthContext } from '$lib/AuthenticationContext';
 	import { sleepingLayout } from '../layoutContext';
 	import SubmissionError from './SubmissionError.svelte';
+	import Spinner from '$lib/components/Spinner.svelte';
 
 	export let data: UserData;
   export let reload: () => void;
@@ -135,6 +136,7 @@
 						{#if !submittingSleep}
 							Sleep now
 						{:else}
+							<Spinner />
 							Submitting&hellip;
 						{/if}
 						<br />
@@ -178,6 +180,7 @@
 					{#if !submittingSleep}
 						Oops, my bad
 					{:else}
+						<Spinner />
 						Submitting&hellip;
 					{/if}
 					<br />
