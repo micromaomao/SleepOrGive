@@ -85,7 +85,8 @@ export async function createSession(
 		})
 	);
 	if (req_evt) {
-		req_evt.cookies.set('session', cookie, { path: '/', httpOnly: true });
+		const YEAR = 1000 * 60 * 60 * 24 * 365;
+		req_evt.cookies.set('session', cookie, { path: '/', httpOnly: true, expires: new Date(Date.now() + YEAR) });
 	}
 	return { bearer, cookie };
 }
