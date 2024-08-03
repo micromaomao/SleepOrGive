@@ -8,6 +8,7 @@
 	import { mustBeValidEmail, mustBeValidVerificationCode } from '$lib/validations';
 	import { onMount } from 'svelte';
 	import type { SignupSessionData } from '../join/+page.svelte';
+	import Spinner from '$lib/components/Spinner.svelte';
 
 	const authContext = useAuthContext();
 
@@ -153,16 +154,23 @@
 			<!-- svelte-ignore a11y-label-has-associated-control -->
 			<label class="code-input">
 				Code:
-				<VerificationCodeInput bind:value={code} />
+				<VerificationCodeInput bind:value={code} onAutofill={handleLogin} />
 			</label>
 
-			<input
-				type="submit"
-				value="Log in"
-				class="primary"
-				disabled={!codeValid || submitting}
-				on:click={handleLogin}
-			/>
+			{#if submitting}
+				<button class="primary" disabled>
+					<Spinner />
+					Log in
+				</button>
+			{:else}
+				<input
+					type="submit"
+					value="Log in"
+					class="primary"
+					disabled={!codeValid}
+					on:click={handleLogin}
+				/>
+			{/if}
 		{/if}
 
 		{#if error}
